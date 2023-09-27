@@ -17,12 +17,12 @@ export default function Home() {
     >
       <h1 className="text-4xl font-bold">Azure Map Testing</h1>
       <div className="min-w-full flex flex-col gap-4">
-        <h2 className="text-2xl font-bold">Default Map:</h2>
-        <DynamicMap />
-      </div>
-      <div className="min-w-full flex flex-col gap-4">
         <h2 className="text-2xl font-bold">Map with Indoor Map:</h2>
         <DynamicIndoorMap />
+      </div>
+      <div className="min-w-full flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">Default Map:</h2>
+        <DynamicMap />
       </div>
     </main>
   );
