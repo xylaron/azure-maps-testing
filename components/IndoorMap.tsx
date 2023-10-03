@@ -1,13 +1,19 @@
-//@ts-nocheck: Atlas is loaded via script tag
+//@ts-nocheck
+/*
+ Current atlas libraries from npm does not support indoor maps and routing, therefore we have to import the libraries from CDN of Azure Maps as a workaround using script tag
+ However, this will cause typescript to throw errors as it cannot find the types for the libraries, hence we have to use //@ts-nocheck to ignore the errors
+*/
 import "azure-maps-control/dist/atlas.min.css";
 import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useRef, useState } from "react";
 // import { response } from "@/examples/wayfinder_res";
 import { useQuery } from "react-query";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const MapComponent: React.FC = () => {
   const [map, setMap] = useState<any>(null);
+  const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [pointA, setPointA] = useState({
     name: "None",
     lat: 0,
@@ -66,6 +72,29 @@ const MapComponent: React.FC = () => {
 
       map.events.add("levelchanged", indoorManager, (e: any) => {
         console.log("The level has changed:", e);
+        const lineLayer = map.layers.getLayerById("path-route");
+        const symbolLayer = map.layers.getLayerById("path-symbols");
+        if (lineLayer) {
+          map.layers.remove(lineLayer);
+        }
+        if (symbolLayer) {
+          map.layers.remove(symbolLayer);
+        }
+        setPointA({
+          name: "None",
+          lat: 0,
+          long: 0,
+        });
+        setPointB({
+          name: "None",
+          lat: 0,
+          long: 0,
+        });
+        setSelectingPointA(false);
+        setSelectingPointB(false);
+        selectingPointARef.current = false;
+        selectingPointBRef.current = false;
+        setCurrentLevel(e.levelNumber - 1);
       });
 
       map.events.add("facilitychanged", indoorManager, (e: any) => {
@@ -84,7 +113,10 @@ const MapComponent: React.FC = () => {
           console.log("Feature FULL:", features[0]);
           console.log("Feature properties:", features[0].properties);
           console.log("Location:", features[0].geometry.coordinates);
-          if (features[0].properties.layerName == "RM$") {
+          if (
+            features[0].properties.layerName == "RM$" &&
+            !Array.isArray(features[0].geometry.coordinates[0])
+          ) {
             const currentSelectingPointA = selectingPointARef.current;
             const currentSelectingPointB = selectingPointBRef.current;
             if (currentSelectingPointA) {
@@ -125,22 +157,37 @@ const MapComponent: React.FC = () => {
     console.log("Point A:", pointA);
     console.log("Point B:", pointB);
 
-    const response = await axios
-      .get("https://us.atlas.microsoft.com/wayfinding/path", {
-        params: {
-          "api-version": "2023-03-01-preview",
-          "subscription-key": process.env.NEXT_PUBLIC_AZURE_MAPS_KEY,
-          routesetid: "e6c980b0-2e26-a5a2-ff29-958642fb1d11",
-          facilityid: "ff4ebf40-ba9a-4783-a489-66bd6fdb7ab7",
-          fromPoint: `${latA},${longA}`,
-          fromLevel: "0",
-          toPoint: `${latB},${longB}`,
-          toLevel: "0",
-          minWidth: "0.5",
-        },
+    if (pointA.name == "None" || pointB.name == "None") {
+      toast.error("Please select both points");
+      return;
+    }
+
+    const fetch = axios.get("https://us.atlas.microsoft.com/wayfinding/path", {
+      params: {
+        "api-version": "2023-03-01-preview",
+        "subscription-key": process.env.NEXT_PUBLIC_AZURE_MAPS_KEY,
+        routesetid: "e6c980b0-2e26-a5a2-ff29-958642fb1d11",
+        facilityid: "ff4ebf40-ba9a-4783-a489-66bd6fdb7ab7",
+        fromPoint: `${latA},${longA}`,
+        fromLevel: currentLevel,
+        toPoint: `${latB},${longB}`,
+        toLevel: currentLevel,
+        minWidth: "0.8",
+      },
+    });
+
+    const response = await toast
+      .promise(fetch, {
+        loading: "Generating path...",
+        success: "Path generated",
+        error: "Error generating path",
+      })
+      .then((res) => {
+        console.log("Path Response:", res);
+        return res;
       })
       .catch((err) => {
-        console.log("Error:", err);
+        console.log("Path Error:", err);
       });
 
     if (!response) {
@@ -156,24 +203,77 @@ const MapComponent: React.FC = () => {
     dataSource.add(pathLineString);
     map.sources.add(dataSource);
 
-    const lineLayer = new atlas.layer.LineLayer(dataSource, "path", {
-      strokeColor: "red",
-      strokeWidth: 3,
+    const lineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
+      strokeColor: "#5CE600",
+      strokeWidth: 4,
+      minZoom: 15,
     });
     map.layers.add(lineLayer);
+
+    const symbolLayer = new atlas.layer.SymbolLayer(
+      dataSource,
+      "path-symbols",
+      {
+        iconOptions: {
+          image: ["get", "icon"],
+          allowOverlap: true,
+          ignorePlacement: true,
+          size: 1,
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+        minZoom: 15,
+      }
+    );
+    map.layers.add(symbolLayer);
+
+    const startPoint = new atlas.data.Feature(
+      new atlas.data.Point([longA, latA]),
+      {
+        icon: "marker-red",
+      }
+    );
+    const endPoint = new atlas.data.Feature(
+      new atlas.data.Point([longB, latB]),
+      {
+        icon: "marker-blue",
+      }
+    );
+    dataSource.add([startPoint, endPoint]);
   };
 
-  const removePath = () => {
-    const lineLayer = map.layers.getLayerById("path");
+  const resetPath = () => {
+    const lineLayer = map.layers.getLayerById("path-route");
+    const symbolLayer = map.layers.getLayerById("path-symbols");
     if (lineLayer) {
       map.layers.remove(lineLayer);
     }
+    if (symbolLayer) {
+      map.layers.remove(symbolLayer);
+    }
+  };
+
+  const resetSelection = () => {
+    setPointA({
+      name: "None",
+      lat: 0,
+      long: 0,
+    });
+    setPointB({
+      name: "None",
+      lat: 0,
+      long: 0,
+    });
+    setSelectingPointA(false);
+    setSelectingPointB(false);
+    selectingPointARef.current = false;
+    selectingPointBRef.current = false;
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-row justify-between px-24">
+    <div className="flex flex-row gap-4">
+      <div className="flex flex-col gap-12 w-3/12 p-8 pr-4">
+        <div className="font-bold text-2xl">Azure Maps Demo</div>
+        <div className="flex flex-col justify-between gap-4">
           <h1 className="font-bold text-lg">
             Point A:{" "}
             <span className="font-medium">
@@ -199,7 +299,7 @@ const MapComponent: React.FC = () => {
             {selectingPointA ? "Cancel" : "Select Point A"}
           </button>
         </div>
-        <div className="flex flex-row justify-between px-24">
+        <div className="flex flex-col justify-between gap-4">
           <h1 className="font-bold text-lg">
             Point B:{" "}
             <span className="font-medium">
@@ -207,7 +307,7 @@ const MapComponent: React.FC = () => {
             </span>
           </h1>
           <button
-            className="bg-green-600 px-2 py-1 rounded-md font-medium hover:bg-green-700 active:bg-green-800"
+            className="bg-blue-600 px-2 py-1 rounded-md font-medium hover:bg-blue-700 active:bg-blue-800"
             onClick={() => {
               if (selectingPointA) {
                 setSelectingPointA(false);
@@ -225,38 +325,25 @@ const MapComponent: React.FC = () => {
             {selectingPointB ? "Cancel" : "Select Point B"}
           </button>
         </div>
-        <div className="flex flex-row justify-between px-24">
+        <div className="flex flex-col justify-between gap-4">
           <button
-            className="bg-yellow-600 px-2 py-1 rounded-md font-medium hover:bg-yellow-700 active:bg-yellow-800"
+            className="bg-yellow-600 px-4 py-1 rounded-md font-medium hover:bg-yellow-700 active:bg-yellow-800"
             onClick={() => {
-              setPointA({
-                name: "None",
-                lat: 0,
-                long: 0,
-              });
-              setPointB({
-                name: "None",
-                lat: 0,
-                long: 0,
-              });
-              setSelectingPointA(false);
-              setSelectingPointB(false);
-              selectingPointARef.current = false;
-              selectingPointBRef.current = false;
-              removePath();
+              resetSelection();
+              resetPath();
             }}
           >
             Reset
           </button>
           <button
-            className="bg-blue-600 px-2 py-1 rounded-md font-medium hover:bg-blue-700 active:bg-blue-800"
+            className="bg-green-600 px-4 py-1 rounded-md font-medium hover:bg-green-700 active:bg-green-800"
             onClick={() => generatePath()}
           >
             Find Path
           </button>
         </div>
       </div>
-      <div id="map" style={{ width: "100%", height: "800px" }}></div>
+      <div id="map" className="w-full min-h-screen"></div>
     </div>
   );
 };
