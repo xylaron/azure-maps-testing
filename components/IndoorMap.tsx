@@ -271,17 +271,19 @@ const MapComponent: React.FC = () => {
 
   return (
     <div className="flex flex-row">
-      <div className="flex flex-col justify-between w-3/12 px-8 py-12">
+      <div className="flex flex-col justify-between w-4/12 px-6 py-12">
         <div className="flex flex-col gap-8">
-          <div className="font-bold text-2xl">Azure Maps Demo</div>
-          <div className="font-bold text-lg">
+          <div className="font-bold text-2xl px-2">Azure Maps Demo</div>
+          <div className="font-bold text-lg px-2">
             Current Floor:{" "}
             <span className="font-medium">{currentLevel + 1}</span>
           </div>
           <div className="flex flex-col gap-4">
-            <h1 className="flex flex-row items-center font-bold text-lg">
-              <MapPin className="pr-1 text-red-600" size={36} />
-              <div className="pr-2">Start Point:</div>
+            <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-bold text-lg">
+              <div className="flex flex-row items-center">
+                <MapPin className="pr-1 text-red-600" size={32} />
+                <div className="pr-2">Start Point:</div>
+              </div>
               <span className="font-medium">
                 {selectingPointA ? "Selecting..." : pointA.name}
               </span>
@@ -306,9 +308,11 @@ const MapComponent: React.FC = () => {
             </Button>
           </div>
           <div className="flex flex-col gap-4">
-            <h1 className="flex flex-row items-center font-bold text-lg">
-              <MapPin className="pr-1 text-blue-600" size={36} />
-              <div className="pr-2">End Point:</div>
+            <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-bold text-lg">
+              <div className="flex flex-row items-center">
+                <MapPin className="pr-1 text-blue-600" size={32} />
+                <div className="pr-2">End Point:</div>
+              </div>
               <span className="font-medium">
                 {selectingPointB ? "Selecting..." : pointB.name}
               </span>
@@ -337,7 +341,7 @@ const MapComponent: React.FC = () => {
         <div className="flex flex-col gap-4">
           <Button
             variant={"secondary"}
-            className="bg-green-600 mx-4 hover:bg-green-800"
+            className="bg-green-600 mx-4 hover:bg-green-700"
             onClick={() => generatePath()}
           >
             Find Path
