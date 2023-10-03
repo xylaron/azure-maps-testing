@@ -6,8 +6,7 @@
 import "azure-maps-control/dist/atlas.min.css";
 import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useRef, useState } from "react";
-// import { response } from "@/examples/wayfinder_res";
-import { useQuery } from "react-query";
+import { MapPin } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -270,76 +269,84 @@ const MapComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-row gap-4">
-      <div className="flex flex-col gap-12 w-3/12 p-8 pr-4">
-        <div className="font-bold text-2xl">Azure Maps Demo</div>
-        <div className="flex flex-col justify-between gap-4">
-          <h1 className="font-bold text-lg">
-            Point A:{" "}
-            <span className="font-medium">
-              {selectingPointA ? "Selecting..." : pointA.name}
-            </span>
-          </h1>
-          <button
-            className="bg-red-600 px-2 py-1 rounded-md font-medium hover:bg-red-700 active:bg-red-800"
-            onClick={() => {
-              if (selectingPointB) {
-                setSelectingPointB(false);
-                selectingPointBRef.current = false;
-              }
-              if (selectingPointA) {
-                setSelectingPointA(false);
-                selectingPointBRef.current = false;
-              } else {
-                setSelectingPointA(true);
-                selectingPointARef.current = true;
-              }
-            }}
-          >
-            {selectingPointA ? "Cancel" : "Select Point A"}
-          </button>
+    <div className="flex flex-row">
+      <div className="flex flex-col justify-between w-3/12 px-8 py-12">
+        <div className="flex flex-col gap-8">
+          <div className="font-bold text-2xl">Azure Maps Demo</div>
+          <div className="font-bold text-xl">
+            Current Floor:{" "}
+            <span className="font-medium">{currentLevel + 1}</span>
+          </div>
+          <div className="flex flex-col gap-4">
+            <h1 className="flex flex-row items-center font-bold text-lg">
+              <MapPin className="pr-1 text-red-600" size={36} />
+              <div className="pr-2">Start Point:</div>
+              <span className="font-medium">
+                {selectingPointA ? "Selecting..." : pointA.name}
+              </span>
+            </h1>
+            <button
+              className="bg-neutral-100 mx-4 py-2 rounded-md font-medium hover:bg-neutral-200 active:bg-neutral-300 text-neutral-900"
+              onClick={() => {
+                if (selectingPointB) {
+                  setSelectingPointB(false);
+                  selectingPointBRef.current = false;
+                }
+                if (selectingPointA) {
+                  setSelectingPointA(false);
+                  selectingPointBRef.current = false;
+                } else {
+                  setSelectingPointA(true);
+                  selectingPointARef.current = true;
+                }
+              }}
+            >
+              {selectingPointA ? "Cancel" : "Select"}
+            </button>
+          </div>
+          <div className="flex flex-col gap-4">
+            <h1 className="flex flex-row items-center font-bold text-lg">
+              <MapPin className="pr-1 text-blue-600" size={36} />
+              <div className="pr-2">End Point:</div>
+              <span className="font-medium">
+                {selectingPointB ? "Selecting..." : pointB.name}
+              </span>
+            </h1>
+            <button
+              className="bg-neutral-100 mx-4 py-2 rounded-md font-medium hover:bg-neutral-200 active:bg-neutral-300 text-neutral-900"
+              onClick={() => {
+                if (selectingPointA) {
+                  setSelectingPointA(false);
+                  selectingPointARef.current = false;
+                }
+                if (selectingPointB) {
+                  setSelectingPointB(false);
+                  selectingPointBRef.current = false;
+                } else {
+                  setSelectingPointB(true);
+                  selectingPointBRef.current = true;
+                }
+              }}
+            >
+              {selectingPointB ? "Cancel" : "Select"}
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col justify-between gap-4">
-          <h1 className="font-bold text-lg">
-            Point B:{" "}
-            <span className="font-medium">
-              {selectingPointB ? "Selecting..." : pointB.name}
-            </span>
-          </h1>
+        <div className="flex flex-col gap-4">
           <button
-            className="bg-blue-600 px-2 py-1 rounded-md font-medium hover:bg-blue-700 active:bg-blue-800"
-            onClick={() => {
-              if (selectingPointA) {
-                setSelectingPointA(false);
-                selectingPointARef.current = false;
-              }
-              if (selectingPointB) {
-                setSelectingPointB(false);
-                selectingPointBRef.current = false;
-              } else {
-                setSelectingPointB(true);
-                selectingPointBRef.current = true;
-              }
-            }}
+            className="bg-green-600 mx-4 py-2 rounded-md font-medium hover:bg-green-700 active:bg-green-800"
+            onClick={() => generatePath()}
           >
-            {selectingPointB ? "Cancel" : "Select Point B"}
+            Find Path
           </button>
-        </div>
-        <div className="flex flex-col justify-between gap-4">
           <button
-            className="bg-yellow-600 px-4 py-1 rounded-md font-medium hover:bg-yellow-700 active:bg-yellow-800"
+            className="bg-neutral-400 mx-4 py-2 rounded-md font-medium hover:bg-neutral-500 active:bg-neutral-600"
             onClick={() => {
               resetSelection();
               resetPath();
             }}
           >
             Reset
-          </button>
-          <button
-            className="bg-green-600 px-4 py-1 rounded-md font-medium hover:bg-green-700 active:bg-green-800"
-            onClick={() => generatePath()}
-          >
-            Find Path
           </button>
         </div>
       </div>
