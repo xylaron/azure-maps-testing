@@ -7,6 +7,7 @@ import "azure-maps-control/dist/atlas.min.css";
 import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
+import { Button } from "./ui/button";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -273,7 +274,7 @@ const MapComponent: React.FC = () => {
       <div className="flex flex-col justify-between w-3/12 px-8 py-12">
         <div className="flex flex-col gap-8">
           <div className="font-bold text-2xl">Azure Maps Demo</div>
-          <div className="font-bold text-xl">
+          <div className="font-bold text-lg">
             Current Floor:{" "}
             <span className="font-medium">{currentLevel + 1}</span>
           </div>
@@ -285,8 +286,8 @@ const MapComponent: React.FC = () => {
                 {selectingPointA ? "Selecting..." : pointA.name}
               </span>
             </h1>
-            <button
-              className="bg-neutral-100 mx-4 py-2 rounded-md font-medium hover:bg-neutral-200 active:bg-neutral-300 text-neutral-900"
+            <Button
+              className="mx-4"
               onClick={() => {
                 if (selectingPointB) {
                   setSelectingPointB(false);
@@ -302,7 +303,7 @@ const MapComponent: React.FC = () => {
               }}
             >
               {selectingPointA ? "Cancel" : "Select"}
-            </button>
+            </Button>
           </div>
           <div className="flex flex-col gap-4">
             <h1 className="flex flex-row items-center font-bold text-lg">
@@ -312,8 +313,9 @@ const MapComponent: React.FC = () => {
                 {selectingPointB ? "Selecting..." : pointB.name}
               </span>
             </h1>
-            <button
-              className="bg-neutral-100 mx-4 py-2 rounded-md font-medium hover:bg-neutral-200 active:bg-neutral-300 text-neutral-900"
+            <Button
+              className="mx-4"
+              variant={"default"}
               onClick={() => {
                 if (selectingPointA) {
                   setSelectingPointA(false);
@@ -329,25 +331,27 @@ const MapComponent: React.FC = () => {
               }}
             >
               {selectingPointB ? "Cancel" : "Select"}
-            </button>
+            </Button>
           </div>
         </div>
         <div className="flex flex-col gap-4">
-          <button
-            className="bg-green-600 mx-4 py-2 rounded-md font-medium hover:bg-green-700 active:bg-green-800"
+          <Button
+            variant={"secondary"}
+            className="bg-green-600 mx-4 hover:bg-green-800"
             onClick={() => generatePath()}
           >
             Find Path
-          </button>
-          <button
-            className="bg-neutral-400 mx-4 py-2 rounded-md font-medium hover:bg-neutral-500 active:bg-neutral-600"
+          </Button>
+          <Button
+            variant={"secondary"}
+            className="mx-4"
             onClick={() => {
               resetSelection();
               resetPath();
             }}
           >
             Reset
-          </button>
+          </Button>
         </div>
       </div>
       <div id="map" className="w-full min-h-screen"></div>
