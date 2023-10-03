@@ -36,8 +36,8 @@ const MapComponent: React.FC = () => {
     atlas.setDomain(`${region}.atlas.microsoft.com`);
 
     const map = new atlas.Map("map", {
-      center: [-122.13315, 47.63559],
-      zoom: 18.5,
+      center: [-122.13315, 47.635575],
+      zoom: 19.2,
       mapConfiguration: mapConfig,
       styleAPIVersion: "2023-03-01-preview",
       authOptions: {
