@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import Head from "next/head";
@@ -6,17 +5,21 @@ import Head from "next/head";
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
-  const DynamicMap = dynamic(() => import("../components/DefaultMap"), {
-    ssr: false,
-  });
   const DynamicIndoorMap = dynamic(() => import("../components/IndoorMap"), {
     ssr: false,
   });
   return (
     <>
       <Head>
-        <title>Azure Maps Demo</title>
-        <meta name="description" content="Testing Azure Maps" />
+        <title>Home - Azure Indoor Maps</title>
+        <meta
+          name="description"
+          content="Indoor Path Finding using Next.js and Azure Maps API"
+        />
+        <meta
+          name="thumbnail"
+          content="https://cdn.discordapp.com/attachments/689832675040559249/1159419624425791509/image.png"
+        />
       </Head>
       <main
         className={`flex min-h-screen flex-col items-center justify-center gap-8 ${inter.className}`}
