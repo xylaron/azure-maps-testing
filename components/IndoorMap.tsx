@@ -293,7 +293,7 @@ const MapComponent: React.FC = () => {
           </Button>
         </div>
       </div>
-      <div id="map" className="w-full min-h-screen"></div>
+      <div id="map" className="w-full min-h-screen bg-neutral-800"></div>
     </div>
   );
 };
