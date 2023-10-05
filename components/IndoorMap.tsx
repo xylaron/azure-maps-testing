@@ -8,27 +8,36 @@ import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "./ui/button";
-import axios from "axios";
 import toast from "react-hot-toast";
+import getWayfinderPath from "@/services/getWayfinderPath";
+import getRoomsList from "@/services/getRoomsList";
+import { Combobox } from "./ui/combobox";
+
+interface Room {
+  name: string;
+  levelOrdinal: number;
+  roomType: string;
+  coordinates: number[][];
+}
 
 const MapComponent: React.FC = () => {
   const [map, setMap] = useState<any>(null);
   const [currentLevel, setCurrentLevel] = useState<number>(0);
+  const [roomsList, setRoomsList] = useState<Room[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [pointA, setPointA] = useState({
     name: "None",
     lat: 0,
     long: 0,
   });
-  const [selectingPointA, setSelectingPointA] = useState<boolean>(false);
-  const selectingPointARef = useRef(selectingPointA);
+  const [selectedPointA, setSelectedPointA] = useState<string>("None");
 
   const [pointB, setPointB] = useState({
     name: "None",
     lat: 0,
     long: 0,
   });
-  const [selectingPointB, setSelectingPointB] = useState<boolean>(false);
-  const selectingPointBRef = useRef(selectingPointB);
+  const [selectedPointB, setSelectedPointB] = useState<string>("None");
 
   useEffect(() => {
     const mapConfig = "3e22b555-b7ec-011f-9085-d15560fea8ea";
@@ -47,10 +56,13 @@ const MapComponent: React.FC = () => {
     });
     setMap(map);
 
-    map.events.add("click", async (e: any) => {
-      const position: [number, number] = [e.position![1], e.position![0]];
-      console.log("clicked on map", position);
+    setIsLoading(true);
+    getRoomsList().then((response) => {
+      console.log("Rooms List:", response);
+      setRoomsList(response);
+      setIsLoading(false);
     });
+
     map.events.add("ready", () => {
       map.controls.add(
         [
@@ -80,76 +92,46 @@ const MapComponent: React.FC = () => {
         if (symbolLayer) {
           map.layers.remove(symbolLayer);
         }
-        setPointA({
-          name: "None",
-          lat: 0,
-          long: 0,
-        });
-        setPointB({
-          name: "None",
-          lat: 0,
-          long: 0,
-        });
-        setSelectingPointA(false);
-        setSelectingPointB(false);
-        selectingPointARef.current = false;
-        selectingPointBRef.current = false;
+        resetSelection();
         setCurrentLevel(e.levelNumber - 1);
       });
 
+      //debug
       map.events.add("facilitychanged", indoorManager, (e: any) => {
         console.log("The facility has changed:", e);
       });
 
+      //debug
       map.events.add("click", (e: any) => {
         const features = map.layers.getRenderedShapes(e.position);
-        const checkArray = (input: any): boolean => {
-          if (Array.isArray(input)) {
-            return input.every((item: any) => Array.isArray(item));
-          }
-          return false;
-        };
         if (features.length > 0 && features[0].properties) {
           console.log("Feature FULL:", features[0]);
           console.log("Feature properties:", features[0].properties);
-          console.log("Location:", features[0].geometry.coordinates);
-          if (
-            features[0].properties.layerName == "RM$" &&
-            !Array.isArray(features[0].geometry.coordinates[0])
-          ) {
-            const currentSelectingPointA = selectingPointARef.current;
-            const currentSelectingPointB = selectingPointBRef.current;
-            if (currentSelectingPointA) {
-              setPointA({
-                name: "Room " + features[0].properties.name,
-                lat: checkArray(features[0].geometry.coordinates)
-                  ? features[0].geometry.coordinates[0][0][1]
-                  : features[0].geometry.coordinates[1],
-                long: checkArray(features[0].geometry.coordinates)
-                  ? features[0].geometry.coordinates[0][0][0]
-                  : features[0].geometry.coordinates[0],
-              });
-              setSelectingPointA(false);
-              selectingPointARef.current = false;
-            }
-            if (currentSelectingPointB) {
-              setPointB({
-                name: "Room " + features[0].properties.name,
-                lat: checkArray(features[0].geometry.coordinates)
-                  ? features[0].geometry.coordinates[0][0][1]
-                  : features[0].geometry.coordinates[1],
-                long: checkArray(features[0].geometry.coordinates)
-                  ? features[0].geometry.coordinates[0][0][0]
-                  : features[0].geometry.coordinates[0],
-              });
-              setSelectingPointB(false);
-              selectingPointBRef.current = false;
-            }
-          }
+          console.log("Feature geometry:", features[0].geometry.coordinates);
         }
       });
     });
   }, []);
+
+  useEffect(() => {
+    setPointA({
+      name: selectedPointA,
+      lat: roomsList.find((room) => room.name == selectedPointA)?.coordinates
+        .lat,
+      long: roomsList.find((room) => room.name == selectedPointA)?.coordinates
+        .long,
+    });
+  }, [selectedPointA]);
+
+  useEffect(() => {
+    setPointB({
+      name: selectedPointB,
+      lat: roomsList.find((room) => room.name == selectedPointB)?.coordinates
+        .lat,
+      long: roomsList.find((room) => room.name == selectedPointB)?.coordinates
+        .long,
+    });
+  }, [selectedPointB]);
 
   const generatePath = async () => {
     const { lat: latA, long: longA } = pointA;
@@ -162,33 +144,13 @@ const MapComponent: React.FC = () => {
       return;
     }
 
-    const fetch = axios.get("https://us.atlas.microsoft.com/wayfinding/path", {
-      params: {
-        "api-version": "2023-03-01-preview",
-        "subscription-key": process.env.NEXT_PUBLIC_AZURE_MAPS_KEY,
-        routesetid: "e6c980b0-2e26-a5a2-ff29-958642fb1d11",
-        facilityid: "ff4ebf40-ba9a-4783-a489-66bd6fdb7ab7",
-        fromPoint: `${latA},${longA}`,
-        fromLevel: currentLevel,
-        toPoint: `${latB},${longB}`,
-        toLevel: currentLevel,
-        minWidth: "0.8",
-      },
-    });
-
-    const response = await toast
-      .promise(fetch, {
-        loading: "Generating path...",
-        success: "Path generated",
-        error: "Error generating path",
-      })
-      .then((res) => {
-        console.log("Path Response:", res);
-        return res;
-      })
-      .catch((err) => {
-        console.log("Path Error:", err);
-      });
+    const response = await getWayfinderPath(
+      latA,
+      longA,
+      latB,
+      longB,
+      currentLevel
+    );
 
     if (!response) {
       return;
@@ -263,10 +225,8 @@ const MapComponent: React.FC = () => {
       lat: 0,
       long: 0,
     });
-    setSelectingPointA(false);
-    setSelectingPointB(false);
-    selectingPointARef.current = false;
-    selectingPointBRef.current = false;
+    setSelectedPointA("None");
+    setSelectedPointB("None");
   };
 
   return (
@@ -278,64 +238,37 @@ const MapComponent: React.FC = () => {
             Current Floor:{" "}
             <span className="font-medium">{currentLevel + 1}</span>
           </div>
-          <div className="flex flex-col gap-4">
-            <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-bold text-lg">
+          <div className="flex flex-col gap-2">
+            <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
               <div className="flex flex-row items-center">
-                <MapPin className="pr-1 text-red-600" size={32} />
+                <MapPin className="pr-1 text-red-600" size={24} />
                 <div className="pr-2">Start Point:</div>
               </div>
-              <span className="font-medium">
-                {selectingPointA ? "Selecting..." : pointA.name}
-              </span>
             </h1>
-            <Button
-              className="mx-4"
-              onClick={() => {
-                if (selectingPointB) {
-                  setSelectingPointB(false);
-                  selectingPointBRef.current = false;
-                }
-                if (selectingPointA) {
-                  setSelectingPointA(false);
-                  selectingPointBRef.current = false;
-                } else {
-                  setSelectingPointA(true);
-                  selectingPointARef.current = true;
-                }
-              }}
-            >
-              {selectingPointA ? "Cancel" : "Select"}
-            </Button>
+            <Combobox
+              className="w-auto mx-4 bg-white text-black hover:bg-netural-300 hover:text-black"
+              rooms={roomsList}
+              value={selectedPointA}
+              setValue={setSelectedPointA}
+              currentLevel={currentLevel}
+              isLoading={isLoading}
+            />
           </div>
           <div className="flex flex-col gap-4">
-            <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-bold text-lg">
+            <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
               <div className="flex flex-row items-center">
-                <MapPin className="pr-1 text-blue-600" size={32} />
+                <MapPin className="pr-1 text-blue-600" size={24} />
                 <div className="pr-2">End Point:</div>
               </div>
-              <span className="font-medium">
-                {selectingPointB ? "Selecting..." : pointB.name}
-              </span>
             </h1>
-            <Button
-              className="mx-4"
-              variant={"default"}
-              onClick={() => {
-                if (selectingPointA) {
-                  setSelectingPointA(false);
-                  selectingPointARef.current = false;
-                }
-                if (selectingPointB) {
-                  setSelectingPointB(false);
-                  selectingPointBRef.current = false;
-                } else {
-                  setSelectingPointB(true);
-                  selectingPointBRef.current = true;
-                }
-              }}
-            >
-              {selectingPointB ? "Cancel" : "Select"}
-            </Button>
+            <Combobox
+              className="w-auto mx-4 bg-white text-black hover:bg-netural-300 hover:text-black"
+              rooms={roomsList}
+              value={selectedPointB}
+              setValue={setSelectedPointB}
+              currentLevel={currentLevel}
+              isLoading={isLoading}
+            />
           </div>
         </div>
         <div className="flex flex-col gap-4">
