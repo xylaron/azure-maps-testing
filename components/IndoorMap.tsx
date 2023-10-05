@@ -49,6 +49,7 @@ const MapComponent: React.FC = () => {
       zoom: 19.2,
       mapConfiguration: mapConfig,
       styleAPIVersion: "2023-03-01-preview",
+      style: "dark",
       authOptions: {
         authType: "subscriptionKey",
         subscriptionKey: process.env.NEXT_PUBLIC_AZURE_MAPS_KEY,
@@ -64,6 +65,7 @@ const MapComponent: React.FC = () => {
     });
 
     map.events.add("ready", () => {
+      map.setStyle({ style: "dark" });
       map.controls.add(
         [
           new atlas.control.ZoomControl(),
