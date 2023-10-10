@@ -15,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ComboboxProps {
   rooms: any[];
@@ -54,37 +55,39 @@ export function Combobox({
           <CommandEmpty className="p-2 text-sm text-center">
             Location not found.
           </CommandEmpty>
-          <CommandGroup className="overflow-y-auto max-h-80">
-            {isLoading ? (
-              <CommandItem disabled className="text-neutral-400">
-                Loading...
-              </CommandItem>
-            ) : (
-              rooms.map(
-                (room) =>
-                  room.levelOrdinal == currentLevel && (
-                    <CommandItem
-                      key={room.name}
-                      onSelect={(currentValue) => {
-                        setValue(
-                          currentValue === value
-                            ? "None"
-                            : currentValue.toUpperCase()
-                        );
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          value === room.name ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {room.name}
-                    </CommandItem>
-                  )
-              )
-            )}
+          <CommandGroup>
+            <ScrollArea className="h-80 pr-4">
+              {isLoading ? (
+                <CommandItem disabled className="text-neutral-400">
+                  Loading...
+                </CommandItem>
+              ) : (
+                rooms.map(
+                  (room) =>
+                    room.levelOrdinal == currentLevel && (
+                      <CommandItem
+                        key={room.name}
+                        onSelect={(currentValue) => {
+                          setValue(
+                            currentValue === value
+                              ? "None"
+                              : currentValue.toUpperCase()
+                          );
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            value === room.name ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {room.name}
+                      </CommandItem>
+                    )
+                )
+              )}
+            </ScrollArea>
           </CommandGroup>
         </Command>
       </PopoverContent>
