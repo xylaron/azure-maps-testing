@@ -27,26 +27,33 @@ const MapComponent: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [pointA, setPointA] = useState({
     name: "None",
-    lat: 0,
-    long: 0,
+    lat: null,
+    long: null,
   });
   const [selectedPointA, setSelectedPointA] = useState<string>("None");
-
   const [pointB, setPointB] = useState({
     name: "None",
-    lat: 0,
-    long: 0,
+    lat: null,
+    long: null,
   });
   const [selectedPointB, setSelectedPointB] = useState<string>("None");
+  const [mapConfig, setMapConfig] = useState<string>(
+    "3e22b555-b7ec-011f-9085-d15560fea8ea"
+  );
 
   useEffect(() => {
-    const mapConfig = "3e22b555-b7ec-011f-9085-d15560fea8ea";
     const region = "us";
     atlas.setDomain(`${region}.atlas.microsoft.com`);
 
+    // let southwest = new atlas.data.Position(-122.13407, 47.63515);
+    // let northeast = new atlas.data.Position(-122.13221, 47.63601);
+
+    // let boundingBox = new atlas.data.BoundingBox(southwest, northeast);
     const map = new atlas.Map("map", {
       center: [-122.13315, 47.635575],
-      zoom: 19.2,
+      zoom: 19,
+      // minZoom: 19.2,
+      // maxBounds: boundingBox,
       mapConfiguration: mapConfig,
       styleAPIVersion: "2023-03-01-preview",
       style: "dark",
@@ -106,6 +113,7 @@ const MapComponent: React.FC = () => {
       //debug
       map.events.add("click", (e: any) => {
         const features = map.layers.getRenderedShapes(e.position);
+        console.log("Position:", e.position);
         if (features.length > 0 && features[0].properties) {
           console.log("Feature FULL:", features[0]);
           console.log("Feature properties:", features[0].properties);
@@ -135,6 +143,14 @@ const MapComponent: React.FC = () => {
     });
   }, [selectedPointB]);
 
+  useEffect(() => {
+    if (map) {
+      map.setServiceOptions({
+        mapConfiguration: mapConfig,
+      });
+    }
+  }, [mapConfig]);
+
   const generatePath = async () => {
     const { lat: latA, long: longA } = pointA;
     const { lat: latB, long: longB } = pointB;
@@ -143,6 +159,11 @@ const MapComponent: React.FC = () => {
 
     if (pointA.name == "None" || pointB.name == "None") {
       toast.error("Please select both points");
+      return;
+    }
+
+    if (mapConfig !== "3e22b555-b7ec-011f-9085-d15560fea8ea") {
+      toast.error("This building does not support routing yet");
       return;
     }
 
@@ -219,13 +240,13 @@ const MapComponent: React.FC = () => {
   const resetSelection = () => {
     setPointA({
       name: "None",
-      lat: 0,
-      long: 0,
+      lat: null,
+      long: null,
     });
     setPointB({
       name: "None",
-      lat: 0,
-      long: 0,
+      lat: null,
+      long: null,
     });
     setSelectedPointA("None");
     setSelectedPointB("None");
@@ -276,7 +297,7 @@ const MapComponent: React.FC = () => {
         <div className="flex flex-col gap-4">
           <Button
             variant={"secondary"}
-            className="bg-green-600 mx-4 hover:bg-green-700"
+            className="mx-4 bg-green-600 hover:bg-green-700"
             onClick={() => generatePath()}
           >
             Find Path
@@ -290,6 +311,28 @@ const MapComponent: React.FC = () => {
             }}
           >
             Reset
+          </Button>
+          <Button
+            className="mx-4"
+            onClick={() => {
+              if (mapConfig == "3e22b555-b7ec-011f-9085-d15560fea8ea") {
+                setMapConfig("1cc23c0f-4efb-fd4f-a72c-60012cd21192");
+                map.setCamera({
+                  center: [-122.13285531565566, 47.63670444275664],
+                  zoom: 19,
+                });
+                map.clear();
+              } else {
+                setMapConfig("3e22b555-b7ec-011f-9085-d15560fea8ea");
+                map.setCamera({
+                  center: [-122.13315, 47.635575],
+                  zoom: 19,
+                });
+                map.clear();
+              }
+            }}
+          >
+            Change Building
           </Button>
         </div>
       </div>
