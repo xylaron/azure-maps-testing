@@ -157,13 +157,13 @@ const MapComponent: React.FC = () => {
     console.log("Point A:", pointA);
     console.log("Point B:", pointB);
 
-    if (pointA.name == "None" || pointB.name == "None") {
-      toast.error("Please select both points");
+    if (mapConfig !== "3e22b555-b7ec-011f-9085-d15560fea8ea") {
+      toast.error("This building does not support routing");
       return;
     }
 
-    if (mapConfig !== "3e22b555-b7ec-011f-9085-d15560fea8ea") {
-      toast.error("This building does not support routing yet");
+    if (pointA.name == "None" || pointB.name == "None") {
+      toast.error("Please select both points");
       return;
     }
 

@@ -1,0 +1,69 @@
+{
+  "points": [
+    {
+      "name": "A",
+      "connections": [
+        {
+          "name": "D",
+          "distance": 1
+        }
+      ]
+    },
+    {
+      "name": "B",
+      "connections": [
+        {
+          "name": "C",
+          "distance": 2
+        },
+        {
+          "name": "D",
+          "distance": 6
+        },
+        {
+          "name": "E",
+          "distance": 1
+        }
+      ]
+    },
+    {
+      "name": "C",
+      "connections": [
+        {
+          "name": "B",
+          "distance": 2
+        },
+        {
+          "name": "D",
+          "distance": 1
+        }
+      ]
+    },
+    {
+      "name": "D",
+      "connections": [
+        {
+          "name": "A",
+          "distance": 1
+        },
+        {
+          "name": "B",
+          "distance": 6
+        },
+        {
+          "name": "C",
+          "distance": 1
+        }
+      ]
+    },
+    {
+      "name": "E",
+      "connections": [
+        {
+          "name": "B",
+          "distance": 1
+        }
+      ]
+    }
+  ]
+}
