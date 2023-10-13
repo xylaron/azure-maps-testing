@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import getWayfinderPath from "@/services/getWayfinderPath";
 import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
+import { mockFetchLocations, type Building } from "@/mock/locations";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function Home() {
   const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [roomsList, setRoomsList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [locations, setLocations] = useState<Building>([]);
   const [pointA, setPointA] = useState({
     name: "None",
     lat: null,
@@ -47,13 +49,12 @@ export default function Home() {
 
     // let boundingBox = new atlas.data.BoundingBox(southwest, northeast);
     const map = new atlas.Map("map", {
-      center: [-122.13315, 47.635575],
-      zoom: 19,
-      // minZoom: 19.2,
+      center: [114.27068710327148, 22.333478832257015],
+      zoom: 15,
+      minZoom: 15,
       // maxBounds: boundingBox,
       mapConfiguration: mapConfig,
       styleAPIVersion: "2023-03-01-preview",
-      style: "dark",
       authOptions: {
         authType: "subscriptionKey",
         subscriptionKey: process.env.NEXT_PUBLIC_AZURE_MAPS_KEY,
@@ -69,16 +70,8 @@ export default function Home() {
     });
 
     map.events.add("ready", () => {
-      map.setStyle({ style: "dark" });
       map.controls.add(
-        [
-          new atlas.control.ZoomControl(),
-          new atlas.control.PitchControl(),
-          new atlas.control.CompassControl(),
-          new atlas.control.StyleControl({
-            mapStyles: "all",
-          }),
-        ],
+        [new atlas.control.ZoomControl(), new atlas.control.CompassControl()],
         {
           position: "top-right",
         }
@@ -86,6 +79,13 @@ export default function Home() {
 
       const indoorManager = new atlas.indoor.IndoorManager(map, {
         levelControl: new atlas.control.LevelControl({ position: "top-right" }),
+      });
+
+      setIsLoading(true);
+      mockFetchLocations().then((response) => {
+        console.log("Mock Locations:", response);
+        setLocations(response);
+        setIsLoading(false);
       });
 
       map.events.add("levelchanged", indoorManager, (e: any) => {
@@ -107,32 +107,11 @@ export default function Home() {
         console.log("The facility has changed:", e);
       });
 
-      const dataSource = new atlas.source.DataSource();
-      map.sources.add(dataSource);
-
-      //debug
-      // const clickSymbolLayer = new atlas.layer.SymbolLayer(
-      //   dataSource,
-      //   "click-symbols",
-      //   {
-      //     iconOptions: {
-      //       image: ["get", "icon"],
-      //       allowOverlap: true,
-      //       ignorePlacement: true,
-      //       size: 0.5,
-      //     },
-      //     filter: ["==", ["geometry-type"], "Point"],
-      //     minZoom: 15,
-      //   }
-      // );
-      // map.layers.add(clickSymbolLayer);
+      //map event handlers
       map.events.add("click", (e: any) => {
         const features = map.layers.getRenderedShapes(e.position);
-        console.log("Position:", e.position);
-        // const point = new atlas.data.Feature(new atlas.data.Point(e.position), {
-        //   icon: "pin-round-red",
-        // });
-        // dataSource.add(point);
+        console.log("Camera bound ", map.getCamera().bounds);
+        console.log("Mouse click position:", e.position);
         if (features.length > 0 && features[0].properties) {
           console.log("Feature FULL:", features[0]);
           console.log("Feature properties:", features[0].properties);
@@ -142,6 +121,7 @@ export default function Home() {
     });
   }, []);
 
+  //point a change
   useEffect(() => {
     setPointA({
       name: selectedPointA,
@@ -152,6 +132,7 @@ export default function Home() {
     });
   }, [selectedPointA]);
 
+  //point b change
   useEffect(() => {
     setPointB({
       name: selectedPointB,
@@ -162,6 +143,7 @@ export default function Home() {
     });
   }, [selectedPointB]);
 
+  //map configuration change
   useEffect(() => {
     if (map) {
       map.setServiceOptions({
@@ -169,6 +151,68 @@ export default function Home() {
       });
     }
   }, [mapConfig]);
+
+  //location symbol layers and event handlers
+  useEffect(() => {
+    if (!map) return;
+    const locationSymbolDataSource = new atlas.source.DataSource();
+    map.sources.add(locationSymbolDataSource);
+
+    const locationSymbolLayer = new atlas.layer.SymbolLayer(
+      locationSymbolDataSource,
+      "location-symbols",
+      {
+        iconOptions: {
+          image: ["get", "icon"],
+          allowOverlap: true,
+          ignorePlacement: true,
+          size: 1,
+        },
+        textOptions: {
+          allowOverlap: true,
+          ignorePlacement: true,
+          textField: ["get", "title"],
+          offset: [0, 0.5],
+          color: "#000000",
+          haloColor: "#FFFFFF",
+          haloWidth: 1,
+          font: ["StandardFont-Bold"],
+          size: 14,
+          anchor: "top",
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+        minZoom: 15,
+      }
+    );
+    for (let i = 0; i < locations.length; i++) {
+      const point = new atlas.data.Feature(
+        new atlas.data.Point(locations[i].coordinates),
+        {
+          icon: "marker-red",
+          title: locations[i].name,
+        }
+      );
+      locationSymbolDataSource.add(point);
+    }
+    map.layers.add(locationSymbolLayer);
+    map.events.add("click", locationSymbolLayer, (e: any) => {
+      const symbol = map.layers.getRenderedShapes(e.position);
+      console.log("Symbol Geometry:", symbol[0].data.geometry);
+      console.log("Symbol Properties:", symbol[0].data.properties);
+      map.setCamera({
+        center: [-122.13315, 47.635575],
+        zoom: 19,
+      });
+    });
+
+    map.events.add("mouseover", locationSymbolLayer, (e: any) => {
+      map.getCanvasContainer().style.cursor = "pointer";
+    });
+
+    map.events.add("mouseout", locationSymbolLayer, (e: any) => {
+      map.getCanvasContainer().style.cursor = "grab";
+    });
+  }, [locations]);
 
   const generatePath = async () => {
     const { lat: latA, long: longA } = pointA;
@@ -248,15 +292,11 @@ export default function Home() {
   const resetDrawing = () => {
     const pathLineLayer = map.layers.getLayerById("path-route");
     const pathSymbolLayer = map.layers.getLayerById("path-symbols");
-    const clickSymbolLayer = map.layers.getLayerById("click-symbols");
     if (pathLineLayer) {
       map.layers.remove(pathLineLayer);
     }
     if (pathSymbolLayer) {
       map.layers.remove(pathSymbolLayer);
-    }
-    if (clickSymbolLayer) {
-      map.layers.remove(clickSymbolLayer);
     }
   };
 
@@ -353,24 +393,13 @@ export default function Home() {
                 <Button
                   className="mx-4"
                   onClick={() => {
-                    if (mapConfig == "3e22b555-b7ec-011f-9085-d15560fea8ea") {
-                      setMapConfig("1cc23c0f-4efb-fd4f-a72c-60012cd21192");
-                      map.setCamera({
-                        center: [-122.13285531565566, 47.63670444275664],
-                        zoom: 19,
-                      });
-                      map.clear();
-                    } else {
-                      setMapConfig("3e22b555-b7ec-011f-9085-d15560fea8ea");
-                      map.setCamera({
-                        center: [-122.13315, 47.635575],
-                        zoom: 19,
-                      });
-                      map.clear();
-                    }
+                    map.setCamera({
+                      center: [114.27068710327148, 22.333478832257015],
+                      zoom: 15,
+                    });
                   }}
                 >
-                  Change Building
+                  Go to HKUST
                 </Button>
               </div>
             </div>
