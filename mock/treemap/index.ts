@@ -1,3 +1,4 @@
+import { academicBuildingNodes } from "./nodes/academicBuilding";
 import { outdoorNodes } from "./nodes/outdoor";
 
 export interface TreeMap {
@@ -24,6 +25,11 @@ export const mockTreeMap: TreeMap[] = [
     id: 1,
     name: "Outdoor",
     nodes: outdoorNodes,
+  },
+  {
+    id: 2,
+    name: "Academic Building",
+    nodes: academicBuildingNodes,
   },
 ];
 

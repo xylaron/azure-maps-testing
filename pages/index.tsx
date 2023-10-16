@@ -26,6 +26,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [locations, setLocations] = useState<Building>([]);
   const [treeMap, setTreeMap] = useState<Node[]>([]);
+  const [currentTreeMap, setCurrentTreeMap] = useState<number>(1);
 
   const [pointA, setPointA] = useState({
     name: "None",
@@ -74,7 +75,7 @@ export default function Home() {
     });
 
     setIsLoading(true);
-    mockFetchTreeMap(1).then((response) => {
+    mockFetchTreeMap(currentTreeMap).then((response) => {
       console.log("Mock TreeMap:", response);
       setTreeMap(response);
       setIsLoading(false);
@@ -97,14 +98,8 @@ export default function Home() {
 
       //map event handlers
       map.events.add("click", (e: any) => {
-        const features = map.layers.getRenderedShapes(e.position);
         console.log("Camera bound ", map.getCamera().bounds);
         console.log("Mouse click position:", e.position);
-        if (features.length > 0 && features[0].properties) {
-          console.log("Feature FULL:", features[0]);
-          console.log("Feature properties:", features[0].properties);
-          console.log("Feature geometry:", features[0].geometry.coordinates);
-        }
       });
     });
   }, []);
@@ -139,6 +134,15 @@ export default function Home() {
       });
     }
   }, [mapConfig]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    mockFetchTreeMap(currentTreeMap).then((response) => {
+      console.log("Mock TreeMap:", response);
+      setTreeMap(response);
+      setIsLoading(false);
+    });
+  }, [currentTreeMap]);
 
   //location symbol layers and event handlers
   useEffect(() => {
@@ -180,6 +184,7 @@ export default function Home() {
           title: locations[i].name,
           imageUrl: locations[i].imageUrl,
           imageCenter: locations[i].imageCenter,
+          treeMapId: locations[i].treeMapId,
         }
       );
       locationSymbolDataSource.add(point);
@@ -246,6 +251,7 @@ export default function Home() {
       map.setCamera({
         maxBounds: new atlas.data.BoundingBox(southwest, northeast),
       });
+      setCurrentTreeMap(symbol[0].data.properties.treeMapId);
     });
 
     map.events.add("mouseover", locationSymbolLayer, (e: any) => {

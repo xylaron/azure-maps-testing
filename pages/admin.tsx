@@ -27,6 +27,7 @@ const Admin: NextPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [locations, setLocations] = useState<Building[]>([]);
   const [treeMap, setTreeMap] = useState<Node[]>([]);
+  const [currentTreeMap, setCurrentTreeMap] = useState<number>(1);
 
   const [mapConfig, setMapConfig] = useState<string>(
     "3e22b555-b7ec-011f-9085-d15560fea8ea"
@@ -78,14 +79,8 @@ const Admin: NextPage = () => {
 
       //map event handlers
       map.events.add("click", (e: any) => {
-        const features = map.layers.getRenderedShapes(e.position);
         console.log("Camera bound ", map.getCamera().bounds);
         console.log("Mouse click position:", e.position);
-        if (features.length > 0 && features[0].properties) {
-          console.log("Feature FULL:", features[0]);
-          console.log("Feature properties:", features[0].properties);
-          console.log("Feature geometry:", features[0].geometry.coordinates);
-        }
       });
     });
   }, []);
@@ -120,7 +115,7 @@ const Admin: NextPage = () => {
         },
         filter: ["==", ["geometry-type"], "Point"],
         minZoom: 15,
-        visible: false,
+        visible: true,
       }
     );
     for (let i = 0; i < locations.length; i++) {
@@ -131,6 +126,7 @@ const Admin: NextPage = () => {
           title: locations[i].name,
           imageUrl: locations[i].imageUrl,
           imageCenter: locations[i].imageCenter,
+          treeMapId: locations[i].treeMapId,
         }
       );
       locationSymbolDataSource.add(point);
@@ -198,6 +194,7 @@ const Admin: NextPage = () => {
       map.setCamera({
         maxBounds: new atlas.data.BoundingBox(southwest, northeast),
       });
+      setCurrentTreeMap(symbol[0].data.properties.treeMapId);
     });
 
     map.events.add("mouseover", locationSymbolLayer, (e: any) => {
@@ -210,11 +207,23 @@ const Admin: NextPage = () => {
   }, [locations]);
 
   useEffect(() => {
+    setIsLoading(true);
+    mockFetchTreeMap(currentTreeMap).then((response) => {
+      console.log("Mock TreeMap:", response);
+      setTreeMap(response);
+      setIsLoading(false);
+    });
+  }, [currentTreeMap]);
+
+  useEffect(() => {
     if (!map) return;
     const treeSymbolDataSource = new atlas.source.DataSource();
     map.sources.add(treeSymbolDataSource);
 
-    const treeMapLayer = new atlas.layer.SymbolLayer(
+    const treeMapLayer = map.layers.getLayerById("treemap-symbols");
+    if (treeMapLayer) map.layers.remove(treeMapLayer);
+
+    const newTreeMapLayer = new atlas.layer.SymbolLayer(
       treeSymbolDataSource,
       "treemap-symbols",
       {
@@ -252,11 +261,18 @@ const Admin: NextPage = () => {
       );
       treeSymbolDataSource.add(point);
     }
-    map.layers.add(treeMapLayer);
-  }, [treeMap]);
+    map.layers.add(newTreeMapLayer);
+  }, [treeMap, currentTreeMap]);
+
+  const resetDrawing = () => {
+    const pathLineLayer = map.layers.getLayerById("path-route");
+    if (pathLineLayer) {
+      map.layers.remove(pathLineLayer);
+    }
+  };
 
   const testPath = () => {
-    const path = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 3];
+    const path = [9, 8, 7, 1, 2, 3, 4, 5, 6];
 
     const pathCoordinates = path.map((id) => {
       const node = treeMap.find((node) => node.id === id);
@@ -270,12 +286,13 @@ const Admin: NextPage = () => {
     dataSource.add(pathLineString);
     map.sources.add(dataSource);
 
-    const lineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
+    resetDrawing();
+    const newLineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
       strokeColor: "#5CE600",
       strokeWidth: 4,
       minZoom: 15,
     });
-    map.layers.add(lineLayer);
+    map.layers.add(newLineLayer);
   };
 
   return (
@@ -296,6 +313,7 @@ const Admin: NextPage = () => {
                     center: [114.27068710327148, 22.333478832257015],
                     zoom: 15,
                   });
+                  setCurrentTreeMap(1);
                 }}
               >
                 Go to HKUST

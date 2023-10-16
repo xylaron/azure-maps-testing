@@ -7,6 +7,7 @@ export interface Location {
   type: string;
   imageUrl: string;
   imageCenter: [number, number];
+  treeMapId: number;
   rooms?: Room[];
 }
 
@@ -18,6 +19,7 @@ export const mockLocations: Location[] = [
     type: "building",
     imageUrl: "https://pathadvisor.ust.hk/api/floors/G/map-image",
     imageCenter: [0, 0],
+    treeMapId: 2,
   },
   {
     id: 2,
@@ -26,6 +28,7 @@ export const mockLocations: Location[] = [
     type: "building",
     imageUrl: "https://pathadvisor.ust.hk/api/floors/G/map-image",
     imageCenter: [0, 0],
+    treeMapId: 2,
   },
   {
     id: 3,
@@ -34,6 +37,7 @@ export const mockLocations: Location[] = [
     type: "building",
     imageUrl: "https://pathadvisor.ust.hk/api/floors/SAG/map-image",
     imageCenter: [-0.005970503841894015, 0.005317988167703902],
+    treeMapId: 1,
   },
 ];
 
