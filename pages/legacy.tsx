@@ -15,18 +15,16 @@ import getWayfinderPath from "@/services/getWayfinderPath";
 import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
 import { mockFetchLocations, type Building } from "@/mock/locations";
-import { Node, mockFetchTreeMap } from "@/mock/treemap/nodes";
+import { NextPage } from "next";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
+const Legacy: NextPage = () => {
   const [map, setMap] = useState<any>(null);
   const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [roomsList, setRoomsList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [locations, setLocations] = useState<Building>([]);
-  const [treeMap, setTreeMap] = useState<Node[]>([]);
-
   const [pointA, setPointA] = useState({
     name: "None",
     lat: null,
@@ -43,7 +41,6 @@ export default function Home() {
     "3e22b555-b7ec-011f-9085-d15560fea8ea"
   );
 
-  //map onload
   useEffect(() => {
     const region = "us";
     atlas.setDomain(`${region}.atlas.microsoft.com`);
@@ -73,13 +70,6 @@ export default function Home() {
       setIsLoading(false);
     });
 
-    setIsLoading(true);
-    mockFetchTreeMap(1).then((response) => {
-      console.log("Mock TreeMap:", response);
-      setTreeMap(response);
-      setIsLoading(false);
-    });
-
     map.events.add("ready", () => {
       map.controls.add(
         [new atlas.control.ZoomControl(), new atlas.control.CompassControl()],
@@ -88,11 +78,34 @@ export default function Home() {
         }
       );
 
+      const indoorManager = new atlas.indoor.IndoorManager(map, {
+        levelControl: new atlas.control.LevelControl({ position: "top-right" }),
+      });
+
       setIsLoading(true);
       mockFetchLocations().then((response) => {
         console.log("Mock Locations:", response);
         setLocations(response);
         setIsLoading(false);
+      });
+
+      map.events.add("levelchanged", indoorManager, (e: any) => {
+        console.log("The level has changed:", e);
+        const lineLayer = map.layers.getLayerById("path-route");
+        const symbolLayer = map.layers.getLayerById("path-symbols");
+        if (lineLayer) {
+          map.layers.remove(lineLayer);
+        }
+        if (symbolLayer) {
+          map.layers.remove(symbolLayer);
+        }
+        resetSelection();
+        setCurrentLevel(e.levelNumber - 1);
+      });
+
+      //debug
+      map.events.add("facilitychanged", indoorManager, (e: any) => {
+        console.log("The facility has changed:", e);
       });
 
       //map event handlers
@@ -178,8 +191,6 @@ export default function Home() {
         {
           icon: "marker-red",
           title: locations[i].name,
-          imageUrl: locations[i].imageUrl,
-          imageCenter: locations[i].imageCenter,
         }
       );
       locationSymbolDataSource.add(point);
@@ -189,62 +200,9 @@ export default function Home() {
       const symbol = map.layers.getRenderedShapes(e.position);
       console.log("Symbol Geometry:", symbol[0].data.geometry);
       console.log("Symbol Properties:", symbol[0].data.properties);
-
-      const indoorMapLayer = map.layers.getLayerById("indoor-map");
-      if (indoorMapLayer) map.layers.remove(indoorMapLayer);
-
-      const imageWidth = 4992;
-      const imageHeight = 3532;
-
-      const pixelSize = 0.0000075;
-
-      const imageTopLeft = [
-        (-imageWidth / 2) * pixelSize,
-        (imageHeight / 2) * pixelSize,
-      ];
-      const imageTopRight = [
-        (imageWidth / 2) * pixelSize,
-        (imageHeight / 2) * pixelSize,
-      ];
-      const imageBottomRight = [
-        (imageWidth / 2) * pixelSize,
-        (-imageHeight / 2) * pixelSize,
-      ];
-      const imageBottomLeft = [
-        (-imageWidth / 2) * pixelSize,
-        (-imageHeight / 2) * pixelSize,
-      ];
-
-      map.layers.add(
-        new atlas.layer.ImageLayer(
-          {
-            url: symbol[0].data.properties.imageUrl,
-            coordinates: [
-              imageTopLeft,
-              imageTopRight,
-              imageBottomRight,
-              imageBottomLeft,
-            ],
-          },
-          "indoor-map"
-        )
-      );
-
       map.setCamera({
-        center: symbol[0].data.properties.imageCenter,
-        zoom: 15,
-      });
-
-      const southwest = new atlas.data.Position(
-        imageBottomLeft[0],
-        imageBottomLeft[1]
-      );
-      const northeast = new atlas.data.Position(
-        imageTopRight[0],
-        imageTopRight[1]
-      );
-      map.setCamera({
-        maxBounds: new atlas.data.BoundingBox(southwest, northeast),
+        center: [-122.13315, 47.635575],
+        zoom: 19,
       });
     });
 
@@ -256,6 +214,81 @@ export default function Home() {
       map.getCanvasContainer().style.cursor = "grab";
     });
   }, [locations]);
+
+  const generatePath = async () => {
+    const { lat: latA, long: longA } = pointA;
+    const { lat: latB, long: longB } = pointB;
+    console.log("Point A:", pointA);
+    console.log("Point B:", pointB);
+
+    if (mapConfig !== "3e22b555-b7ec-011f-9085-d15560fea8ea") {
+      toast.error("This building does not support routing");
+      return;
+    }
+
+    if (pointA.name == "None" || pointB.name == "None") {
+      toast.error("Please select both points");
+      return;
+    }
+
+    const response = await getWayfinderPath(
+      latA,
+      longA,
+      latB,
+      longB,
+      currentLevel
+    );
+
+    if (!response) {
+      return;
+    }
+
+    const pathCoordinates = response.data.paths[0].legs[0].points.map(
+      (point) => [point.longitude, point.latitude]
+    );
+    const pathLineString = new atlas.data.LineString(pathCoordinates);
+
+    const dataSource = new atlas.source.DataSource();
+    dataSource.add(pathLineString);
+    map.sources.add(dataSource);
+
+    const lineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
+      strokeColor: "#5CE600",
+      strokeWidth: 4,
+      minZoom: 15,
+    });
+    map.layers.add(lineLayer);
+
+    const symbolLayer = new atlas.layer.SymbolLayer(
+      dataSource,
+      "path-symbols",
+      {
+        iconOptions: {
+          image: ["get", "icon"],
+          allowOverlap: true,
+          ignorePlacement: true,
+          size: 1,
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+        minZoom: 15,
+      }
+    );
+    map.layers.add(symbolLayer);
+
+    const startPoint = new atlas.data.Feature(
+      new atlas.data.Point([longA, latA]),
+      {
+        icon: "marker-red",
+      }
+    );
+    const endPoint = new atlas.data.Feature(
+      new atlas.data.Point([longB, latB]),
+      {
+        icon: "marker-blue",
+      }
+    );
+    dataSource.add([startPoint, endPoint]);
+  };
 
   const resetDrawing = () => {
     const pathLineLayer = map.layers.getLayerById("path-route");
@@ -283,29 +316,6 @@ export default function Home() {
     setSelectedPointB("None");
   };
 
-  const testPath = () => {
-    const path = [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 3];
-
-    const pathCoordinates = path.map((id) => {
-      const node = treeMap.find((node) => node.id === id);
-      console.log("Node:", node);
-      return [node.coordinates[0], node.coordinates[1]];
-    });
-
-    const pathLineString = new atlas.data.LineString(pathCoordinates);
-
-    const dataSource = new atlas.source.DataSource();
-    dataSource.add(pathLineString);
-    map.sources.add(dataSource);
-
-    const lineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
-      strokeColor: "#5CE600",
-      strokeWidth: 4,
-      minZoom: 15,
-    });
-    map.layers.add(lineLayer);
-  };
-
   return (
     <>
       <Head>
@@ -327,7 +337,7 @@ export default function Home() {
             <div className="flex flex-col justify-between w-4/12 px-6 py-12">
               <div className="flex flex-col gap-8">
                 <div className="font-bold text-2xl px-2">Azure Maps Demo</div>
-                {/* <div className="font-bold text-lg px-2">
+                <div className="font-bold text-lg px-2">
                   Current Floor:{" "}
                   <span className="font-medium">{currentLevel + 1}</span>
                 </div>
@@ -362,15 +372,15 @@ export default function Home() {
                     currentLevel={currentLevel}
                     isLoading={isLoading}
                   />
-                </div> */}
+                </div>
               </div>
               <div className="flex flex-col gap-4">
                 <Button
                   variant={"secondary"}
                   className="mx-4 bg-green-600 hover:bg-green-700"
-                  onClick={() => testPath()}
+                  onClick={() => generatePath()}
                 >
-                  Test Path
+                  Find Path
                 </Button>
                 <Button
                   variant={"secondary"}
@@ -401,4 +411,6 @@ export default function Home() {
       </main>
     </>
   );
-}
+};
+
+export default Legacy;
