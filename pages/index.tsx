@@ -15,7 +15,7 @@ import getWayfinderPath from "@/services/getWayfinderPath";
 import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
 import { mockFetchLocations, type Building } from "@/mock/locations";
-import { Node, mockFetchTreeMap } from "@/mock/treemap/nodes";
+import { Node, mockFetchTreeMap } from "@/mock/treemap";
 
 const inter = Inter({ subsets: ["latin"] });
 
