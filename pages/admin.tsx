@@ -56,12 +56,9 @@ const Admin: NextPage = () => {
     setMap(map);
 
     map.events.add("ready", () => {
-      map.controls.add(
-        [new atlas.control.ZoomControl(), new atlas.control.CompassControl()],
-        {
-          position: "top-right",
-        }
-      );
+      map.controls.add([new atlas.control.ZoomControl()], {
+        position: "top-right",
+      });
 
       setIsLoading(true);
       mockFetchLocations().then((response) => {
