@@ -1,3 +1,5 @@
+import { Node } from "@/mock/treemap";
+
 interface Connections {
   [key: string]: number;
 }
@@ -5,86 +7,6 @@ interface Connections {
 interface Nodes {
   [key: string]: Connections;
 }
-
-interface GraphData {
-  points: {
-    name: string;
-    connections: {
-      name: string;
-      distance: number;
-    }[];
-  }[];
-}
-
-const graphData = {
-  points: [
-    {
-      name: "A",
-      connections: [
-        {
-          name: "D",
-          distance: 1,
-        },
-      ],
-    },
-    {
-      name: "B",
-      connections: [
-        {
-          name: "C",
-          distance: 2,
-        },
-        {
-          name: "D",
-          distance: 6,
-        },
-        {
-          name: "E",
-          distance: 1,
-        },
-      ],
-    },
-    {
-      name: "C",
-      connections: [
-        {
-          name: "B",
-          distance: 2,
-        },
-        {
-          name: "D",
-          distance: 1,
-        },
-      ],
-    },
-    {
-      name: "D",
-      connections: [
-        {
-          name: "A",
-          distance: 1,
-        },
-        {
-          name: "B",
-          distance: 6,
-        },
-        {
-          name: "C",
-          distance: 1,
-        },
-      ],
-    },
-    {
-      name: "E",
-      connections: [
-        {
-          name: "B",
-          distance: 1,
-        },
-      ],
-    },
-  ],
-};
 
 class Graph {
   nodes: Nodes;
@@ -182,21 +104,34 @@ const shortestPath = (
   return [];
 };
 
-const graph = new Graph();
-for (const point of graphData.points) {
-  graph.addNode(
-    point.name,
-    point.connections.reduce(
-      (acc: Connections, connection: { name: string; distance: number }) => {
-        acc[connection.name] = connection.distance;
-        return acc;
-      },
-      {}
-    )
-  );
-}
+export const getSinglePath = (
+  graphData: Node[],
+  start: number,
+  end: number
+) => {
+  const graph = new Graph();
+  for (const point of graphData) {
+    graph.addNode(
+      point.id.toString(),
+      point.connections.reduce(
+        (acc: Connections, connection: { id: number; distance: number }) => {
+          acc[connection.id.toString()] = connection.distance;
+          return acc;
+        },
+        {}
+      )
+    );
+  }
 
-let start: string = "A";
-let end: string = "E";
-let shortestPathResult = shortestPath(graph, start, end);
-console.log(`The path from ${start} to ${end}: `, shortestPathResult);
+  let shortestPathResult = shortestPath(
+    graph,
+    start.toString(),
+    end.toString()
+  );
+  //change string array to number array
+  let formattedShortestPathResult = shortestPathResult.map((point) =>
+    parseInt(point)
+  );
+
+  return formattedShortestPathResult;
+};

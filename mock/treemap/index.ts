@@ -1,5 +1,5 @@
 import { academicBuildingNodes } from "./nodes/academicBuilding";
-import { outdoorNodes } from "./nodes/outdoor";
+import { campusMapNodes } from "./nodes/campusMap";
 import { shawAuditoriumNodes } from "./nodes/shawAuditorium";
 
 export interface TreeMap {
@@ -24,8 +24,8 @@ export interface Connection {
 export const mockTreeMap: TreeMap[] = [
   {
     id: 1,
-    name: "Outdoor",
-    nodes: outdoorNodes,
+    name: "Campus Map",
+    nodes: campusMapNodes,
   },
   {
     id: 2,
@@ -38,6 +38,14 @@ export const mockTreeMap: TreeMap[] = [
     nodes: shawAuditoriumNodes,
   },
 ];
+
+export const mockFetchFullTreeMap = (): Promise<TreeMap[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(mockTreeMap);
+    }, 1000);
+  });
+};
 
 export const mockFetchTreeMap = (id: number): Promise<Node[]> => {
   return new Promise((resolve) => {

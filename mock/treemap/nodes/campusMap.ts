@@ -1,6 +1,6 @@
 import { type Node } from "@/mock/treemap";
 
-export const outdoorNodes: Node[] = [
+export const campusMapNodes: Node[] = [
   {
     id: 1,
     name: "The Hong Kong Jockey Club Atrium",
@@ -14,22 +14,20 @@ export const outdoorNodes: Node[] = [
     ],
   },
   {
-    id: 2,
-    name: "Academic Building",
-    coordinates: [114.26827757078553, 22.33280142803781],
-    type: "building",
-    connections: [],
-  },
-  {
     id: 3,
     name: "Shaw Auditorium",
     coordinates: [114.26812908819306, 22.331018942275094],
     type: "building",
-    connections: [],
+    connections: [
+      {
+        id: 14,
+        distance: 15.7111296822275,
+      },
+    ],
   },
   {
     id: 4,
-    name: "The Hong Kong Jockey Club Atrium Exit",
+    name: "The Hong Kong Jockey Club Atrium Exit A",
     coordinates: [114.2681902784787, 22.334569884435595],
     type: "exit",
     connections: [
@@ -180,13 +178,17 @@ export const outdoorNodes: Node[] = [
   },
   {
     id: 14,
-    name: "Shaw Auditorium Exit",
+    name: "Shaw Auditorium Exit A",
     coordinates: [114.26825491922693, 22.3308625746305],
     type: "exit",
     connections: [
       {
         id: 13,
         distance: 41.15405947937345,
+      },
+      {
+        id: 3,
+        distance: 15.7111296822275,
       },
     ],
   },

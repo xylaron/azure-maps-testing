@@ -1,7 +1,8 @@
 //@ts-nocheck
 /*
- Current atlas libraries from npm does not support indoor maps and routing, therefore we have to import the libraries from CDN of Azure Maps as a workaround using script tag
- However, this will cause typescript to throw errors as it cannot find the types for the libraries, hence we have to use //@ts-nocheck to ignore the errors
+  Originally this page was used to test the Azure Maps Routing API and the Indoor Map module, but since the Indoor Map module does not have a npm pacakage, we needed to import it via script tag.
+  However, the Indoor Maps Module is no longer used in this page, therefore the script tag is no longer needed and can use the Azure Maps npm package instead.
+  To-do: Convert this page to use the Azure Maps npm package instead of the script tag, to reenable TypeScript and to remove the @ts-nocheck comment.
 */
 import { Inter } from "next/font/google";
 import Head from "next/head";
@@ -11,35 +12,34 @@ import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
-import getWayfinderPath from "@/services/getWayfinderPath";
-import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
-import { mockFetchLocations, type Building } from "@/mock/locations";
-import { Node, mockFetchTreeMap } from "@/mock/treemap";
+import { mockFetchBuildings, type Building } from "@/mock/buildings";
+import {
+  Node,
+  TreeMap,
+  mockFetchFullTreeMap,
+  mockFetchTreeMap,
+} from "@/mock/treemap";
+import { getSinglePath } from "@/services/getSinglePath";
+import { getFullPath } from "@/services/getFullPath";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [map, setMap] = useState<any>(null);
-  const [currentLevel, setCurrentLevel] = useState<number>(0);
-  const [roomsList, setRoomsList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [locations, setLocations] = useState<Building>([]);
+  const [locationsA, setLocationsA] = useState<any>([]);
+  const [locationsB, setLocationsB] = useState<any>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [treeMap, setTreeMap] = useState<Node[]>([]);
+  const [fullTreeMap, setFullTreemap] = useState<TreeMap[]>([]);
   const [currentTreeMap, setCurrentTreeMap] = useState<number>(1);
-
-  const [pointA, setPointA] = useState({
-    name: "None",
-    lat: null,
-    long: null,
-  });
-  const [selectedPointA, setSelectedPointA] = useState<string>("None");
-  const [pointB, setPointB] = useState({
-    name: "None",
-    lat: null,
-    long: null,
-  });
-  const [selectedPointB, setSelectedPointB] = useState<string>("None");
+  const [selectedBuildingA, setSelectedBuildingA] = useState<string>("None");
+  const [selectedBuildingB, setSelectedBuildingB] = useState<string>("None");
+  const [selectedLocationA, setSelectedLocationA] = useState<string>("None");
+  const [selectedLocationB, setSelectedLocationB] = useState<string>("None");
+  const [selectedPointA, setSelectedPointA] = useState<any>({});
+  const [selectedPointB, setSelectedPointB] = useState<any>({});
   const [mapConfig, setMapConfig] = useState<string>(
     "3e22b555-b7ec-011f-9085-d15560fea8ea"
   );
@@ -49,15 +49,21 @@ export default function Home() {
     const region = "us";
     atlas.setDomain(`${region}.atlas.microsoft.com`);
 
-    // let southwest = new atlas.data.Position(-122.13407, 47.63515);
-    // let northeast = new atlas.data.Position(-122.13221, 47.63601);
+    let southwest = new atlas.data.Position(
+      114.25533413886734,
+      22.32392661393618
+    );
+    let northeast = new atlas.data.Position(
+      114.28604006767,
+      22.343040319755985
+    );
 
-    // let boundingBox = new atlas.data.BoundingBox(southwest, northeast);
+    let boundingBox = new atlas.data.BoundingBox(southwest, northeast);
     const map = new atlas.Map("map", {
       center: [114.27068710327148, 22.333478832257015],
-      zoom: 15,
+      zoom: 16,
       minZoom: 15,
-      // maxBounds: boundingBox,
+      maxBounds: boundingBox,
       mapConfiguration: mapConfig,
       styleAPIVersion: "2023-03-01-preview",
       authOptions: {
@@ -68,16 +74,11 @@ export default function Home() {
     setMap(map);
 
     setIsLoading(true);
-    getRoomsList().then((response) => {
-      console.log("Rooms List:", response);
-      setRoomsList(response);
-      setIsLoading(false);
-    });
-
-    setIsLoading(true);
-    mockFetchTreeMap(currentTreeMap).then((response) => {
-      console.log("Mock TreeMap:", response);
-      setTreeMap(response);
+    mockFetchFullTreeMap().then((response) => {
+      console.log("Mock Full TreeMap:", response);
+      setFullTreemap(response);
+      console.log("Mock Treemap: ", response[currentTreeMap - 1].nodes);
+      setTreeMap(response[currentTreeMap - 1].nodes);
       setIsLoading(false);
     });
 
@@ -87,9 +88,9 @@ export default function Home() {
       });
 
       setIsLoading(true);
-      mockFetchLocations().then((response) => {
+      mockFetchBuildings().then((response) => {
         console.log("Mock Locations:", response);
-        setLocations(response);
+        setBuildings(response);
         setIsLoading(false);
       });
 
@@ -100,28 +101,6 @@ export default function Home() {
       });
     });
   }, []);
-
-  //point a change
-  useEffect(() => {
-    setPointA({
-      name: selectedPointA,
-      lat: roomsList.find((room) => room.name == selectedPointA)?.coordinates
-        .lat,
-      long: roomsList.find((room) => room.name == selectedPointA)?.coordinates
-        .long,
-    });
-  }, [selectedPointA]);
-
-  //point b change
-  useEffect(() => {
-    setPointB({
-      name: selectedPointB,
-      lat: roomsList.find((room) => room.name == selectedPointB)?.coordinates
-        .lat,
-      long: roomsList.find((room) => room.name == selectedPointB)?.coordinates
-        .long,
-    });
-  }, [selectedPointB]);
 
   //map configuration change
   useEffect(() => {
@@ -173,15 +152,15 @@ export default function Home() {
         minZoom: 15,
       }
     );
-    for (let i = 0; i < locations.length; i++) {
+    for (let i = 0; i < buildings.length; i++) {
       const point = new atlas.data.Feature(
-        new atlas.data.Point(locations[i].coordinates),
+        new atlas.data.Point(buildings[i].coordinates),
         {
           icon: "marker-red",
-          title: locations[i].name,
-          imageUrl: locations[i].imageUrl,
-          imageCenter: locations[i].imageCenter,
-          treeMapId: locations[i].treeMapId,
+          title: buildings[i].name,
+          imageUrl: buildings[i].imageUrl,
+          imageCenter: buildings[i].imageCenter,
+          treeMapId: buildings[i].treeMapId,
         }
       );
       locationSymbolDataSource.add(point);
@@ -249,6 +228,7 @@ export default function Home() {
         maxBounds: new atlas.data.BoundingBox(southwest, northeast),
       });
       setCurrentTreeMap(symbol[0].data.properties.treeMapId);
+      resetSelection();
     });
 
     map.events.add("mouseover", locationSymbolLayer, (e: any) => {
@@ -258,7 +238,103 @@ export default function Home() {
     map.events.add("mouseout", locationSymbolLayer, (e: any) => {
       map.getCanvasContainer().style.cursor = "grab";
     });
-  }, [locations]);
+  }, [buildings]);
+
+  //indoor map symbol layers
+  useEffect(() => {
+    if (!map) return;
+    if (currentTreeMap === 1) return;
+    const treeSymbolDataSource = new atlas.source.DataSource();
+    map.sources.add(treeSymbolDataSource);
+
+    const treeMapLayer = map.layers.getLayerById("indoor-symbols");
+    if (treeMapLayer) map.layers.remove(treeMapLayer);
+
+    const newTreeMapLayer = new atlas.layer.SymbolLayer(
+      treeSymbolDataSource,
+      "indoor-symbols",
+      {
+        iconOptions: {
+          image: ["get", "icon"],
+          allowOverlap: true,
+          ignorePlacement: true,
+          size: ["get", "size"],
+          offset: ["get", "iconOffset"],
+        },
+        textOptions: {
+          allowOverlap: true,
+          ignorePlacement: true,
+          textField: ["get", "title"],
+          offset: ["get", "textOffset"],
+          color: "#000000",
+          haloColor: "#FFFFFF",
+          haloWidth: 1,
+          font: ["StandardFont-Bold"],
+          size: 12,
+          anchor: "top",
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+        minZoom: 15,
+      }
+    );
+    for (let i = 0; i < treeMap.length; i++) {
+      if (treeMap[i].type === "room") {
+        const point = new atlas.data.Feature(
+          new atlas.data.Point(treeMap[i].coordinates),
+          {
+            icon: "none",
+            title: treeMap[i].name,
+            size: 1,
+          }
+        );
+        treeSymbolDataSource.add(point);
+      }
+      if (treeMap[i].type === "exit") {
+        const point = new atlas.data.Feature(
+          new atlas.data.Point(treeMap[i].coordinates),
+          {
+            icon: "pin-round-blue",
+            title: treeMap[i].name,
+            size: 0.75,
+            iconOffset: [0, 10],
+            textOffset: [0, 0.5],
+          }
+        );
+        treeSymbolDataSource.add(point);
+      }
+    }
+    map.layers.add(newTreeMapLayer);
+  }, [treeMap, currentTreeMap]);
+
+  useEffect(() => {
+    if (selectedBuildingA === "None") return;
+    setLocationsA(
+      fullTreeMap.find((treeMap) => treeMap.name === selectedBuildingA).nodes
+    );
+    setSelectedLocationA("None");
+  }, [selectedBuildingA]);
+
+  useEffect(() => {
+    if (selectedBuildingB === "None") return;
+    setLocationsB(
+      fullTreeMap.find((treeMap) => treeMap.name === selectedBuildingB).nodes
+    );
+    setSelectedLocationB("None");
+  }, [selectedBuildingB]);
+
+  useEffect(() => {
+    setSelectedPointA({
+      building: selectedBuildingA,
+      location: selectedLocationA,
+    });
+  }, [selectedLocationA]);
+
+  useEffect(() => {
+    setSelectedPointB({
+      building: selectedBuildingB,
+      location: selectedLocationB,
+    });
+  }, [selectedLocationB]);
 
   const resetDrawing = () => {
     const pathLineLayer = map.layers.getLayerById("path-route");
@@ -272,26 +348,50 @@ export default function Home() {
   };
 
   const resetSelection = () => {
-    setPointA({
-      name: "None",
-      lat: null,
-      long: null,
-    });
-    setPointB({
-      name: "None",
-      lat: null,
-      long: null,
-    });
-    setSelectedPointA("None");
-    setSelectedPointB("None");
+    setSelectedLocationA("None");
+    setSelectedLocationB("None");
+    setSelectedBuildingA("None");
+    setSelectedBuildingB("None");
+    setSelectedPointA({});
+    setSelectedPointB({});
   };
 
-  const testPath = () => {
-    const path = [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 3];
+  const generatePath = () => {
+    if (
+      selectedBuildingA === "None" ||
+      selectedBuildingB === "None" ||
+      selectedLocationA === "None" ||
+      selectedLocationB === "None"
+    )
+      return toast.error("Please select start and end points.");
+
+    if (selectedBuildingA !== selectedBuildingB)
+      return toast.error("Cross-building path finding is not supported yet.");
+
+    if (selectedBuildingA !== fullTreeMap[currentTreeMap - 1].name)
+      return toast.error(
+        "Please find paths for buildings in the current view."
+      );
+
+    // const testFullPath = getFullPath(
+    //   fullTreeMap,
+    //   selectedPointA,
+    //   selectedPointB
+    // );
+    // console.log("Testfullpath: ", testFullPath);
+
+    const pointA = treeMap.find(
+      (node) => node.name === selectedPointA.location
+    );
+    const pointB = treeMap.find(
+      (node) => node.name === selectedPointB.location
+    );
+
+    const path = getSinglePath(treeMap, pointA.id, pointB.id);
+    console.log(`Path from: ${pointA.id} to ${pointB.id}: `, path);
 
     const pathCoordinates = path.map((id) => {
       const node = treeMap.find((node) => node.id === id);
-      console.log("Node:", node);
       return [node.coordinates[0], node.coordinates[1]];
     });
 
@@ -301,12 +401,46 @@ export default function Home() {
     dataSource.add(pathLineString);
     map.sources.add(dataSource);
 
-    const lineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
+    resetDrawing();
+    const newLineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
       strokeColor: "#5CE600",
       strokeWidth: 4,
       minZoom: 15,
     });
-    map.layers.add(lineLayer);
+    map.layers.add(
+      newLineLayer,
+      currentTreeMap === 1 ? "location-symbols" : "indoor-symbols"
+    );
+    const symbolLayer = new atlas.layer.SymbolLayer(
+      dataSource,
+      "path-symbols",
+      {
+        iconOptions: {
+          image: ["get", "icon"],
+          allowOverlap: true,
+          ignorePlacement: true,
+          size: 1,
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+        minZoom: 15,
+      }
+    );
+    map.layers.add(symbolLayer);
+
+    const startPoint = new atlas.data.Feature(
+      new atlas.data.Point([pointA?.coordinates[0], pointA?.coordinates[1]]),
+      {
+        icon: "pin-red",
+      }
+    );
+    const endPoint = new atlas.data.Feature(
+      new atlas.data.Point([pointB?.coordinates[0], pointB?.coordinates[1]]),
+      {
+        icon: "pin-blue",
+      }
+    );
+    dataSource.add([startPoint, endPoint]);
+    toast.success("Path generated!");
   };
 
   return (
@@ -327,12 +461,20 @@ export default function Home() {
       >
         <div className="min-w-full flex flex-col gap-4">
           <div className="flex flex-row">
-            <div className="flex flex-col justify-between w-4/12 px-6 py-12">
+            <div className="flex flex-col justify-between w-4/12 px-6 py-8">
               <div className="flex flex-col gap-8">
                 <div className="font-bold text-2xl px-2">Azure Maps Demo</div>
                 {/* <div className="font-bold text-lg px-2">
                   Current Floor:{" "}
                   <span className="font-medium">{currentLevel + 1}</span>
+                </div> */}
+                <div className="font-bold text-lg px-2">
+                  Current View:{" "}
+                  <span className="font-medium">
+                    {fullTreeMap[currentTreeMap - 1]
+                      ? fullTreeMap[currentTreeMap - 1].name
+                      : "Loading..."}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-2">
                   <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
@@ -341,37 +483,63 @@ export default function Home() {
                       <div className="pr-2">Start Point:</div>
                     </div>
                   </h1>
-                  <Combobox
-                    className="w-auto mx-4 bg-white text-black hover:bg-netural-300 hover:text-black"
-                    rooms={roomsList}
-                    value={selectedPointA}
-                    setValue={setSelectedPointA}
-                    currentLevel={currentLevel}
-                    isLoading={isLoading}
-                  />
+                  <div className="mx-4 flex flex-col gap-2">
+                    <label className="text-sm font-medium">Location</label>
+                    <Combobox
+                      className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
+                      treeMap={fullTreeMap}
+                      value={selectedBuildingA}
+                      setValue={setSelectedBuildingA}
+                      isLoading={isLoading}
+                    />
+                  </div>
+                  <div className="mx-4 flex flex-col gap-2">
+                    <label className="text-sm font-medium">Room/Building</label>
+                    <Combobox
+                      className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
+                      disabled={selectedBuildingA === "None"}
+                      treeMap={locationsA}
+                      value={selectedLocationA}
+                      setValue={setSelectedLocationA}
+                      isLoading={isLoading}
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
                   <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
                     <div className="flex flex-row items-center">
                       <MapPin className="pr-1 text-blue-600" size={24} />
                       <div className="pr-2">End Point:</div>
                     </div>
                   </h1>
-                  <Combobox
-                    className="w-auto mx-4 bg-white text-black hover:bg-netural-300 hover:text-black"
-                    rooms={roomsList}
-                    value={selectedPointB}
-                    setValue={setSelectedPointB}
-                    currentLevel={currentLevel}
-                    isLoading={isLoading}
-                  />
-                </div> */}
+                  <div className="mx-4 flex flex-col gap-2">
+                    <label className="text-sm font-medium">Location</label>
+                    <Combobox
+                      className="w-auto  bg-white text-black hover:bg-netural-300 hover:text-black"
+                      treeMap={fullTreeMap}
+                      value={selectedBuildingB}
+                      setValue={setSelectedBuildingB}
+                      isLoading={isLoading}
+                    />
+                  </div>
+                  <div className="mx-4 flex flex-col gap-2">
+                    <label className="text-sm font-medium">Room/Building</label>
+                    <Combobox
+                      className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
+                      disabled={selectedBuildingB === "None"}
+                      treeMap={locationsB}
+                      value={selectedLocationB}
+                      setValue={setSelectedLocationB}
+                      isLoading={isLoading}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 <Button
                   variant={"secondary"}
                   className="mx-4 bg-green-600 hover:bg-green-700"
-                  onClick={() => testPath()}
+                  onClick={() => generatePath()}
                 >
                   Test Path
                 </Button>
@@ -390,8 +558,26 @@ export default function Home() {
                   onClick={() => {
                     map.setCamera({
                       center: [114.27068710327148, 22.333478832257015],
-                      zoom: 15,
+                      zoom: 16,
                     });
+                    setCurrentTreeMap(1);
+                    let southwest = new atlas.data.Position(
+                      114.25533413886734,
+                      22.32392661393618
+                    );
+                    let northeast = new atlas.data.Position(
+                      114.28604006767,
+                      22.343040319755985
+                    );
+
+                    let boundingBox = new atlas.data.BoundingBox(
+                      southwest,
+                      northeast
+                    );
+                    map.setCamera({
+                      maxBounds: boundingBox,
+                    });
+                    resetSelection();
                   }}
                 >
                   Go to HKUST

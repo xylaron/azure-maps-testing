@@ -14,7 +14,7 @@ import toast from "react-hot-toast";
 import getWayfinderPath from "@/services/getWayfinderPath";
 import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
-import { mockFetchLocations, type Building } from "@/mock/locations";
+import { mockFetchBuildings, type Building } from "@/mock/buildings";
 import { NextPage } from "next";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -83,7 +83,7 @@ const Legacy: NextPage = () => {
       });
 
       setIsLoading(true);
-      mockFetchLocations().then((response) => {
+      mockFetchBuildings().then((response) => {
         console.log("Mock Locations:", response);
         setLocations(response);
         setIsLoading(false);

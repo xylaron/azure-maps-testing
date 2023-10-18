@@ -1,6 +1,6 @@
 import { Room } from "@/mock/rooms";
 
-export interface Location {
+export interface Building {
   id: number;
   name: string;
   coordinates: [number, number];
@@ -11,7 +11,7 @@ export interface Location {
   rooms?: Room[];
 }
 
-export const mockLocations: Location[] = [
+export const mockLocations: Building[] = [
   {
     id: 1,
     name: "The Hong Kong Jockey Club Atrium",
@@ -23,15 +23,6 @@ export const mockLocations: Location[] = [
   },
   {
     id: 2,
-    name: "Academic Building",
-    coordinates: [114.26827757078553, 22.33280142803781],
-    type: "building",
-    imageUrl: "https://pathadvisor.ust.hk/api/floors/G/map-image",
-    imageCenter: [0, 0],
-    treeMapId: 2,
-  },
-  {
-    id: 3,
     name: "Shaw Auditorium",
     coordinates: [114.26812908819306, 22.331018942275094],
     type: "building",
@@ -41,7 +32,7 @@ export const mockLocations: Location[] = [
   },
 ];
 
-export const mockFetchLocations = (): Promise<Location[]> => {
+export const mockFetchBuildings = (): Promise<Building[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockLocations);

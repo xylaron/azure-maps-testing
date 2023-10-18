@@ -12,12 +12,14 @@ import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import getWayfinderPath from "@/services/getWayfinderPath";
 import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
-import { mockFetchLocations, type Building } from "@/mock/locations";
+import { mockFetchBuildings, type Building } from "@/mock/buildings";
 import { Node, mockFetchTreeMap } from "@/mock/treemap";
+import { getSinglePath } from "@/services/getSinglePath";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +27,8 @@ const Admin: NextPage = () => {
   const [map, setMap] = useState<any>(null);
   const [currentLevel, setCurrentLevel] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [pointA, setPointA] = useState<number>(1);
+  const [pointB, setPointB] = useState<number>(1);
   const [locations, setLocations] = useState<Building[]>([]);
   const [treeMap, setTreeMap] = useState<Node[]>([]);
   const [currentTreeMap, setCurrentTreeMap] = useState<number>(1);
@@ -61,7 +65,7 @@ const Admin: NextPage = () => {
       });
 
       setIsLoading(true);
-      mockFetchLocations().then((response) => {
+      mockFetchBuildings().then((response) => {
         console.log("Mock Locations:", response);
         setLocations(response);
         setIsLoading(false);
@@ -269,7 +273,7 @@ const Admin: NextPage = () => {
   };
 
   const testPath = () => {
-    const path = [9, 8, 7, 1, 2, 3, 4, 5, 6];
+    const path = getSinglePath(treeMap, pointA, pointB);
 
     const pathCoordinates = path.map((id) => {
       const node = treeMap.find((node) => node.id === id);
@@ -301,6 +305,16 @@ const Admin: NextPage = () => {
           <div className="flex flex-col w-4/12 px-6 py-12 justify-between">
             <div className="flex flex-col gap-8">
               <div className="font-bold text-2xl px-2">Azure Maps Admin</div>
+              <Input
+                type="number"
+                placeholder="PointA"
+                onChange={(e) => setPointA(e.target.value)}
+              />
+              <Input
+                type="number"
+                placeholder="PointB"
+                onChange={(e) => setPointB(e.target.value)}
+              />
             </div>
             <div className="flex flex-col gap-4">
               <Button

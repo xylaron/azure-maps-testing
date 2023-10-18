@@ -71,6 +71,10 @@ export const academicBuildingNodes: Node[] = [
         id: 4,
         distance: 97.1326286805884,
       },
+      {
+        id: 6,
+        distance: 60.096571194249044,
+      },
     ],
   },
   {
