@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import getWayfinderPath from "@/services/getWayfinderPath";
-import getRoomsList from "@/services/getRoomsList";
 import { Combobox } from "@/components/ui/combobox";
 import { mockFetchBuildings, type Building } from "@/mock/buildings";
 import { Node, mockFetchTreeMap } from "@/mock/treemap";
