@@ -37,7 +37,7 @@ export const mockLocations: Location[] = [
     type: "building",
     imageUrl: "https://pathadvisor.ust.hk/api/floors/SAG/map-image",
     imageCenter: [-0.005970503841894015, 0.005317988167703902],
-    treeMapId: 1,
+    treeMapId: 3,
   },
 ];
 
