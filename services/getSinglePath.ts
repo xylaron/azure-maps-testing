@@ -1,4 +1,4 @@
-import { Node } from "@/mock/treemap";
+import { Node } from "@/mock/treemap/treemap";
 
 interface Connections {
   [key: string]: number;

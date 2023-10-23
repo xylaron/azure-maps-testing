@@ -19,7 +19,7 @@ import {
   TreeMap,
   mockFetchFullTreeMap,
   mockFetchTreeMap,
-} from "@/mock/treemap";
+} from "@/mock/treemap/treemap";
 import { getSinglePath } from "@/services/getSinglePath";
 import { getFullPath } from "@/services/getFullPath";
 
@@ -373,12 +373,13 @@ export default function Home() {
         "Please find paths for buildings in the current view."
       );
 
-    // const testFullPath = getFullPath(
-    //   fullTreeMap,
-    //   selectedPointA,
-    //   selectedPointB
-    // );
-    // console.log("Testfullpath: ", testFullPath);
+    const testFullPath = getFullPath(
+      fullTreeMap,
+      selectedBuildingA,
+      selectedLocationA,
+      selectedBuildingB,
+      selectedLocationB
+    );
 
     const pointA = treeMap.find(
       (node) => node.name === selectedPointA.location

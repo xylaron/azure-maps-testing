@@ -17,7 +17,7 @@ import toast from "react-hot-toast";
 import getWayfinderPath from "@/services/getWayfinderPath";
 import { Combobox } from "@/components/ui/combobox";
 import { mockFetchBuildings, type Building } from "@/mock/buildings";
-import { Node, mockFetchTreeMap } from "@/mock/treemap";
+import { Node, mockFetchTreeMap } from "@/mock/treemap/treemap";
 import { getSinglePath } from "@/services/getSinglePath";
 
 const inter = Inter({ subsets: ["latin"] });

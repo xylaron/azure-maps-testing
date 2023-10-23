@@ -1,31 +1,30 @@
-import { TreeMap } from "@/mock/treemap";
+import { TreeMap } from "@/mock/treemap/treemap";
 import { getSinglePath } from "@/services/getSinglePath";
 
 export const getFullPath = (
   fullTreeMap: TreeMap[],
-  startPoint: string,
-  endPoint: string
+  startBuilding: string,
+  startLocation: string,
+  endBuilding: string,
+  endLocation: string
 ) => {
-  const locationA = fullTreeMap.find((treeMap) => {
-    return treeMap.nodes.find((node) => node.name === startPoint);
-  });
+  const startBuildingTree = fullTreeMap.find(
+    (building) => building.name === startBuilding
+  );
+  console.log("startBuildingTree: ", startBuildingTree);
 
-  const locationB = fullTreeMap.find((treeMap) => {
-    return treeMap.nodes.find((node) => node.name === endPoint);
-  });
+  const endBuildingTree = fullTreeMap.find(
+    (building) => building.name === endBuilding
+  );
+  console.log("endBuildingTree: ", endBuildingTree);
 
-  console.log(locationA);
-  console.log(locationB);
+  const startLocationNode = startBuildingTree?.nodes.find(
+    (node) => node.name === startLocation
+  );
+  console.log("startLocationNode: ", startLocationNode);
 
-  if (locationA === locationB) {
-    const pointA = locationA?.nodes.find((node) => node.name === startPoint);
-    const pointB = locationB?.nodes.find((node) => node.name === endPoint);
-    const path = getSinglePath(locationA!.nodes, pointA!.id, pointB!.id);
-    return [
-      {
-        id: locationA!.id,
-        path: path,
-      },
-    ];
-  }
+  const endLocationNode = endBuildingTree?.nodes.find(
+    (node) => node.name === endLocation
+  );
+  console.log("endLocationNode: ", endLocationNode);
 };

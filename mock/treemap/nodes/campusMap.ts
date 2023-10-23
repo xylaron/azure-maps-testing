@@ -1,4 +1,4 @@
-import { type Node } from "@/mock/treemap";
+import { type Node } from "@/mock/treemap/treemap";
 
 export const campusMapNodes: Node[] = [
   {
