@@ -62,6 +62,7 @@ export function Combobox({
               ) : (
                 treeMap.map((node) => {
                   if (node.type == "road") return;
+                  if (node.type == "exit") return;
                   return (
                     <CommandItem
                       key={node.id}

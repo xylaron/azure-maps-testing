@@ -36,6 +36,6 @@ export const mockFetchBuildings = (): Promise<Building[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockLocations);
-    }, 1000);
+    }, 1);
   });
 };

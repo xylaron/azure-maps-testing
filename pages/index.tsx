@@ -6,6 +6,7 @@
 */
 import { Inter } from "next/font/google";
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import "azure-maps-control/dist/atlas.min.css";
 import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useState } from "react";
@@ -25,7 +26,7 @@ import { getFullPath } from "@/services/getFullPath";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
+const Home = () => {
   const [map, setMap] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [locationsA, setLocationsA] = useState<any>([]);
@@ -40,6 +41,7 @@ export default function Home() {
   const [selectedLocationB, setSelectedLocationB] = useState<string>("None");
   const [selectedPointA, setSelectedPointA] = useState<any>({});
   const [selectedPointB, setSelectedPointB] = useState<any>({});
+  const [allPaths, setAllPaths] = useState<any>([]);
   const [mapConfig, setMapConfig] = useState<string>(
     "3e22b555-b7ec-011f-9085-d15560fea8ea"
   );
@@ -71,6 +73,7 @@ export default function Home() {
         subscriptionKey: process.env.NEXT_PUBLIC_AZURE_MAPS_KEY,
       },
     });
+    console.log("Map", map);
     setMap(map);
 
     setIsLoading(true);
@@ -111,18 +114,10 @@ export default function Home() {
     }
   }, [mapConfig]);
 
-  useEffect(() => {
-    setIsLoading(true);
-    mockFetchTreeMap(currentTreeMap).then((response) => {
-      console.log("Mock TreeMap:", response);
-      setTreeMap(response);
-      setIsLoading(false);
-    });
-  }, [currentTreeMap]);
-
   //location symbol layers and event handlers
   useEffect(() => {
     if (!map) return;
+    // if (map.ready == false) return;
     const locationSymbolDataSource = new atlas.source.DataSource();
     map.sources.add(locationSymbolDataSource);
 
@@ -167,7 +162,10 @@ export default function Home() {
     }
     map.layers.add(locationSymbolLayer);
     map.events.add("click", locationSymbolLayer, (e: any) => {
-      const symbol = map.layers.getRenderedShapes(e.position);
+      const symbol = map.layers.getRenderedShapes(
+        e.position,
+        locationSymbolLayer
+      );
       console.log("Symbol Geometry:", symbol[0].data.geometry);
       console.log("Symbol Properties:", symbol[0].data.properties);
 
@@ -228,7 +226,7 @@ export default function Home() {
         maxBounds: new atlas.data.BoundingBox(southwest, northeast),
       });
       setCurrentTreeMap(symbol[0].data.properties.treeMapId);
-      resetSelection();
+      setTreeMap([]);
     });
 
     map.events.add("mouseover", locationSymbolLayer, (e: any) => {
@@ -304,7 +302,7 @@ export default function Home() {
       }
     }
     map.layers.add(newTreeMapLayer);
-  }, [treeMap, currentTreeMap]);
+  }, [treeMap]);
 
   useEffect(() => {
     if (selectedBuildingA === "None") return;
@@ -356,22 +354,104 @@ export default function Home() {
     setSelectedPointB({});
   };
 
+  // const generatePath = () => {
+  //   if (
+  //     selectedBuildingA === "None" ||
+  //     selectedBuildingB === "None" ||
+  //     selectedLocationA === "None" ||
+  //     selectedLocationB === "None"
+  //   )
+  //     return toast.error("Please select start and end points.");
+
+  //   if (selectedBuildingA !== selectedBuildingB)
+  //     return toast.error("Cross-building path finding is not supported yet.");
+
+  //   if (selectedBuildingA !== fullTreeMap[currentTreeMap - 1].name)
+  //     return toast.error(
+  //       "Please find paths for buildings in the current view."
+  //     );
+
+  //   const pointA = treeMap.find(
+  //     (node) => node.name === selectedPointA.location
+  //   );
+  //   const pointB = treeMap.find(
+  //     (node) => node.name === selectedPointB.location
+  //   );
+
+  //   const path = getSinglePath(treeMap, pointA.id, pointB.id);
+
+  //   const pathCoordinates = path.map((id) => {
+  //     const node = treeMap.find((node) => node.id === id);
+  //     return [node.coordinates[0], node.coordinates[1]];
+  //   });
+
+  //   const pathLineString = new atlas.data.LineString(pathCoordinates);
+
+  //   const dataSource = new atlas.source.DataSource();
+  //   dataSource.add(pathLineString);
+  //   map.sources.add(dataSource);
+
+  //   resetDrawing();
+  //   const newLineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
+  //     strokeColor: "#5CE600",
+  //     strokeWidth: 4,
+  //     minZoom: 15,
+  //   });
+  //   map.layers.add(
+  //     newLineLayer,
+  //     currentTreeMap === 1 ? "location-symbols" : "indoor-symbols"
+  //   );
+  //   const symbolLayer = new atlas.layer.SymbolLayer(
+  //     dataSource,
+  //     "path-symbols",
+  //     {
+  //       iconOptions: {
+  //         image: ["get", "icon"],
+  //         allowOverlap: true,
+  //         ignorePlacement: true,
+  //         size: 1,
+  //       },
+  //       filter: ["==", ["geometry-type"], "Point"],
+  //       minZoom: 15,
+  //     }
+  //   );
+  //   map.layers.add(symbolLayer);
+
+  //   const startPoint = new atlas.data.Feature(
+  //     new atlas.data.Point([pointA?.coordinates[0], pointA?.coordinates[1]]),
+  //     {
+  //       icon: "pin-red",
+  //     }
+  //   );
+  //   const endPoint = new atlas.data.Feature(
+  //     new atlas.data.Point([pointB?.coordinates[0], pointB?.coordinates[1]]),
+  //     {
+  //       icon: "pin-blue",
+  //     }
+  //   );
+  //   dataSource.add([startPoint, endPoint]);
+  //   toast.success("Path generated!");
+  // };
+
   const generatePath = () => {
     if (
       selectedBuildingA === "None" ||
       selectedBuildingB === "None" ||
       selectedLocationA === "None" ||
       selectedLocationB === "None"
-    )
+    ) {
+      resetDrawing();
       return toast.error("Please select start and end points.");
-
-    if (selectedBuildingA !== selectedBuildingB)
-      return toast.error("Cross-building path finding is not supported yet.");
-
-    if (selectedBuildingA !== fullTreeMap[currentTreeMap - 1].name)
-      return toast.error(
-        "Please find paths for buildings in the current view."
-      );
+    }
+    if (
+      selectedBuildingB === selectedLocationA ||
+      selectedBuildingA === selectedLocationB ||
+      selectedBuildingA === selectedBuildingB ||
+      selectedLocationA === selectedLocationB
+    ) {
+      resetDrawing();
+      return toast.error("Please select different start and end points.");
+    }
 
     const testFullPath = getFullPath(
       fullTreeMap,
@@ -380,18 +460,34 @@ export default function Home() {
       selectedBuildingB,
       selectedLocationB
     );
+    setAllPaths(testFullPath);
+    toast.success("Path generated!");
+  };
 
-    const pointA = treeMap.find(
-      (node) => node.name === selectedPointA.location
-    );
+  useEffect(() => {
+    setIsLoading(true);
+    console.log("Current TreeMap: ", currentTreeMap);
+    mockFetchTreeMap(currentTreeMap).then((response) => {
+      console.log("Changed TreeMap:", response);
+      setTreeMap(response);
+      setIsLoading(false);
+    });
+    if (treeMap.length === 0) return;
+
+    if (allPaths.length === 0) return;
+    console.log("Path: ", allPaths);
+
+    const currentPath = allPaths.find((path) => path.id === currentTreeMap);
+    console.log("Current Path: ", currentPath);
+    if (!currentPath) return;
+
+    console.log("Current treeMap: ", treeMap);
+    const pointA = treeMap.find((node) => node.id === currentPath.path[0]);
     const pointB = treeMap.find(
-      (node) => node.name === selectedPointB.location
+      (node) => node.id === currentPath.path[currentPath.path.length - 1]
     );
 
-    const path = getSinglePath(treeMap, pointA.id, pointB.id);
-    console.log(`Path from: ${pointA.id} to ${pointB.id}: `, path);
-
-    const pathCoordinates = path.map((id) => {
+    const pathCoordinates = currentPath.path.map((id) => {
       const node = treeMap.find((node) => node.id === id);
       return [node.coordinates[0], node.coordinates[1]];
     });
@@ -403,15 +499,18 @@ export default function Home() {
     map.sources.add(dataSource);
 
     resetDrawing();
+
     const newLineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
       strokeColor: "#5CE600",
       strokeWidth: 4,
       minZoom: 15,
     });
+
     map.layers.add(
       newLineLayer,
       currentTreeMap === 1 ? "location-symbols" : "indoor-symbols"
     );
+
     const symbolLayer = new atlas.layer.SymbolLayer(
       dataSource,
       "path-symbols",
@@ -428,6 +527,9 @@ export default function Home() {
     );
     map.layers.add(symbolLayer);
 
+    console.log("Point A: ", pointA);
+    console.log("Point B: ", pointB);
+
     const startPoint = new atlas.data.Feature(
       new atlas.data.Point([pointA?.coordinates[0], pointA?.coordinates[1]]),
       {
@@ -441,8 +543,7 @@ export default function Home() {
       }
     );
     dataSource.add([startPoint, endPoint]);
-    toast.success("Path generated!");
-  };
+  }, [allPaths, treeMap]);
 
   return (
     <>
@@ -540,9 +641,11 @@ export default function Home() {
                 <Button
                   variant={"secondary"}
                   className="mx-4 bg-green-600 hover:bg-green-700"
-                  onClick={() => generatePath()}
+                  onClick={() => {
+                    generatePath();
+                  }}
                 >
-                  Test Path
+                  Show Path
                 </Button>
                 <Button
                   variant={"secondary"}
@@ -550,6 +653,7 @@ export default function Home() {
                   onClick={() => {
                     resetSelection();
                     resetDrawing();
+                    setAllPaths([]);
                   }}
                 >
                   Reset
@@ -562,6 +666,7 @@ export default function Home() {
                       zoom: 16,
                     });
                     setCurrentTreeMap(1);
+                    setTreeMap([]);
                     let southwest = new atlas.data.Position(
                       114.25533413886734,
                       22.32392661393618
@@ -578,7 +683,6 @@ export default function Home() {
                     map.setCamera({
                       maxBounds: boundingBox,
                     });
-                    resetSelection();
                   }}
                 >
                   Go to HKUST
@@ -591,4 +695,8 @@ export default function Home() {
       </main>
     </>
   );
-}
+};
+
+export default dynamic(() => Promise.resolve(Home), {
+  ssr: false,
+});

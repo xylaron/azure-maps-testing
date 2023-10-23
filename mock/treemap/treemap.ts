@@ -29,7 +29,7 @@ export const mockTreeMap: TreeMap[] = [
   },
   {
     id: 2,
-    name: "Academic Building",
+    name: "The Hong Kong Jockey Club Atrium",
     nodes: academicBuildingNodes,
   },
   {
@@ -43,7 +43,7 @@ export const mockFetchFullTreeMap = (): Promise<TreeMap[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockTreeMap);
-    }, 1000);
+    }, 1);
   });
 };
 
@@ -51,6 +51,6 @@ export const mockFetchTreeMap = (id: number): Promise<Node[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockTreeMap[id - 1].nodes);
-    }, 1000);
+    }, 1);
   });
 };
