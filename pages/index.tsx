@@ -354,85 +354,6 @@ const Home = () => {
     setSelectedPointB({});
   };
 
-  // const generatePath = () => {
-  //   if (
-  //     selectedBuildingA === "None" ||
-  //     selectedBuildingB === "None" ||
-  //     selectedLocationA === "None" ||
-  //     selectedLocationB === "None"
-  //   )
-  //     return toast.error("Please select start and end points.");
-
-  //   if (selectedBuildingA !== selectedBuildingB)
-  //     return toast.error("Cross-building path finding is not supported yet.");
-
-  //   if (selectedBuildingA !== fullTreeMap[currentTreeMap - 1].name)
-  //     return toast.error(
-  //       "Please find paths for buildings in the current view."
-  //     );
-
-  //   const pointA = treeMap.find(
-  //     (node) => node.name === selectedPointA.location
-  //   );
-  //   const pointB = treeMap.find(
-  //     (node) => node.name === selectedPointB.location
-  //   );
-
-  //   const path = getSinglePath(treeMap, pointA.id, pointB.id);
-
-  //   const pathCoordinates = path.map((id) => {
-  //     const node = treeMap.find((node) => node.id === id);
-  //     return [node.coordinates[0], node.coordinates[1]];
-  //   });
-
-  //   const pathLineString = new atlas.data.LineString(pathCoordinates);
-
-  //   const dataSource = new atlas.source.DataSource();
-  //   dataSource.add(pathLineString);
-  //   map.sources.add(dataSource);
-
-  //   resetDrawing();
-  //   const newLineLayer = new atlas.layer.LineLayer(dataSource, "path-route", {
-  //     strokeColor: "#5CE600",
-  //     strokeWidth: 4,
-  //     minZoom: 15,
-  //   });
-  //   map.layers.add(
-  //     newLineLayer,
-  //     currentTreeMap === 1 ? "location-symbols" : "indoor-symbols"
-  //   );
-  //   const symbolLayer = new atlas.layer.SymbolLayer(
-  //     dataSource,
-  //     "path-symbols",
-  //     {
-  //       iconOptions: {
-  //         image: ["get", "icon"],
-  //         allowOverlap: true,
-  //         ignorePlacement: true,
-  //         size: 1,
-  //       },
-  //       filter: ["==", ["geometry-type"], "Point"],
-  //       minZoom: 15,
-  //     }
-  //   );
-  //   map.layers.add(symbolLayer);
-
-  //   const startPoint = new atlas.data.Feature(
-  //     new atlas.data.Point([pointA?.coordinates[0], pointA?.coordinates[1]]),
-  //     {
-  //       icon: "pin-red",
-  //     }
-  //   );
-  //   const endPoint = new atlas.data.Feature(
-  //     new atlas.data.Point([pointB?.coordinates[0], pointB?.coordinates[1]]),
-  //     {
-  //       icon: "pin-blue",
-  //     }
-  //   );
-  //   dataSource.add([startPoint, endPoint]);
-  //   toast.success("Path generated!");
-  // };
-
   const generatePath = () => {
     if (
       selectedBuildingA === "None" ||
@@ -441,6 +362,7 @@ const Home = () => {
       selectedLocationB === "None"
     ) {
       resetDrawing();
+      setAllPaths([]);
       return toast.error("Please select start and end points.");
     }
     if (
@@ -450,6 +372,7 @@ const Home = () => {
       selectedLocationA === selectedLocationB
     ) {
       resetDrawing();
+      setAllPaths([]);
       return toast.error("Please select different start and end points.");
     }
 
