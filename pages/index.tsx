@@ -23,6 +23,7 @@ import {
 } from "@/mock/treemap/treemap";
 import { getSinglePath } from "@/services/getSinglePath";
 import { getFullPath } from "@/services/getFullPath";
+import SymbolProperties from "@/components/SymbolProperties";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,6 +46,10 @@ const Home = () => {
   const [mapConfig, setMapConfig] = useState<string>(
     "3e22b555-b7ec-011f-9085-d15560fea8ea"
   );
+
+  //indoor symbol states
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<any>({});
 
   //map onload
   useEffect(() => {
@@ -302,8 +307,16 @@ const Home = () => {
       }
     }
     map.layers.add(newTreeMapLayer);
+    map.events.add("click", newTreeMapLayer, (e: any) => {
+      const symbol = map.layers.getRenderedShapes(e.position, newTreeMapLayer);
+      console.log("Symbol Geometry:", symbol[0].data.geometry);
+      console.log("Symbol Properties:", symbol[0].data.properties);
+      setSelectedSymbol(symbol[0].data.properties);
+      setIsMenuOpen(true);
+    });
   }, [treeMap]);
 
+  //user selection handlers
   useEffect(() => {
     if (selectedBuildingA === "None") return;
     setLocationsA(
@@ -368,7 +381,6 @@ const Home = () => {
     if (
       selectedBuildingB === selectedLocationA ||
       selectedBuildingA === selectedLocationB ||
-      selectedBuildingA === selectedBuildingB ||
       selectedLocationA === selectedLocationB
     ) {
       resetDrawing();
@@ -387,6 +399,7 @@ const Home = () => {
     toast.success("Path generated!");
   };
 
+  //path layers
   useEffect(() => {
     setIsLoading(true);
     console.log("Current TreeMap: ", currentTreeMap);
@@ -487,130 +500,146 @@ const Home = () => {
         <div className="min-w-full flex flex-col gap-4">
           <div className="flex flex-row">
             <div className="flex flex-col justify-between w-4/12 px-6 py-8">
-              <div className="flex flex-col gap-8">
-                <div className="font-bold text-2xl px-2">Azure Maps Demo</div>
-                {/* <div className="font-bold text-lg px-2">
+              {isMenuOpen ? (
+                <SymbolProperties
+                  setIsMenuOpen={setIsMenuOpen}
+                  selectedSymbol={selectedSymbol}
+                  setSelectedSymbol={setSelectedSymbol}
+                />
+              ) : (
+                <>
+                  <div className="flex flex-col gap-6">
+                    <div className="font-bold text-xl px-2">
+                      HKUST Path Advisor Demo
+                    </div>
+                    {/* <div className="font-bold text-lg px-2">
                   Current Floor:{" "}
                   <span className="font-medium">{currentLevel + 1}</span>
                 </div> */}
-                <div className="font-bold text-lg px-2">
-                  Current View:{" "}
-                  <span className="font-medium">
-                    {fullTreeMap[currentTreeMap - 1]
-                      ? fullTreeMap[currentTreeMap - 1].name
-                      : "Loading..."}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
-                    <div className="flex flex-row items-center">
-                      <MapPin className="pr-1 text-red-600" size={24} />
-                      <div className="pr-2">Start Point:</div>
+                    <div className="font-bold text-base px-2">
+                      Current View:{" "}
+                      <span className="font-medium">
+                        {fullTreeMap[currentTreeMap - 1]
+                          ? fullTreeMap[currentTreeMap - 1].name
+                          : "Loading..."}
+                      </span>
                     </div>
-                  </h1>
-                  <div className="mx-4 flex flex-col gap-2">
-                    <label className="text-sm font-medium">Location</label>
-                    <Combobox
-                      className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
-                      treeMap={fullTreeMap}
-                      value={selectedBuildingA}
-                      setValue={setSelectedBuildingA}
-                      isLoading={isLoading}
-                    />
-                  </div>
-                  <div className="mx-4 flex flex-col gap-2">
-                    <label className="text-sm font-medium">Room/Building</label>
-                    <Combobox
-                      className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
-                      disabled={selectedBuildingA === "None"}
-                      treeMap={locationsA}
-                      value={selectedLocationA}
-                      setValue={setSelectedLocationA}
-                      isLoading={isLoading}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
-                    <div className="flex flex-row items-center">
-                      <MapPin className="pr-1 text-blue-600" size={24} />
-                      <div className="pr-2">End Point:</div>
+                    <div className="flex flex-col gap-2">
+                      <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
+                        <div className="flex flex-row items-center">
+                          <MapPin className="pr-1 text-red-600" size={24} />
+                          <div className="pr-2">Start Point:</div>
+                        </div>
+                      </h1>
+                      <div className="mx-4 flex flex-col gap-2">
+                        <label className="text-sm font-medium">Location</label>
+                        <Combobox
+                          className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
+                          treeMap={fullTreeMap}
+                          value={selectedBuildingA}
+                          setValue={setSelectedBuildingA}
+                          isLoading={isLoading}
+                        />
+                      </div>
+                      <div className="mx-4 flex flex-col gap-2">
+                        <label className="text-sm font-medium">
+                          Room/Building
+                        </label>
+                        <Combobox
+                          className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
+                          disabled={selectedBuildingA === "None"}
+                          treeMap={locationsA}
+                          value={selectedLocationA}
+                          setValue={setSelectedLocationA}
+                          isLoading={isLoading}
+                        />
+                      </div>
                     </div>
-                  </h1>
-                  <div className="mx-4 flex flex-col gap-2">
-                    <label className="text-sm font-medium">Location</label>
-                    <Combobox
-                      className="w-auto  bg-white text-black hover:bg-netural-300 hover:text-black"
-                      treeMap={fullTreeMap}
-                      value={selectedBuildingB}
-                      setValue={setSelectedBuildingB}
-                      isLoading={isLoading}
-                    />
+                    <div className="flex flex-col gap-2">
+                      <h1 className="flex flex-row items-center justify-between ml-2 mr-4 font-semibold text-base">
+                        <div className="flex flex-row items-center">
+                          <MapPin className="pr-1 text-blue-600" size={24} />
+                          <div className="pr-2">End Point:</div>
+                        </div>
+                      </h1>
+                      <div className="mx-4 flex flex-col gap-2">
+                        <label className="text-sm font-medium">Location</label>
+                        <Combobox
+                          className="w-auto  bg-white text-black hover:bg-netural-300 hover:text-black"
+                          treeMap={fullTreeMap}
+                          value={selectedBuildingB}
+                          setValue={setSelectedBuildingB}
+                          isLoading={isLoading}
+                        />
+                      </div>
+                      <div className="mx-4 flex flex-col gap-2">
+                        <label className="text-sm font-medium">
+                          Room/Building
+                        </label>
+                        <Combobox
+                          className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
+                          disabled={selectedBuildingB === "None"}
+                          treeMap={locationsB}
+                          value={selectedLocationB}
+                          setValue={setSelectedLocationB}
+                          isLoading={isLoading}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="mx-4 flex flex-col gap-2">
-                    <label className="text-sm font-medium">Room/Building</label>
-                    <Combobox
-                      className="w-auto bg-white text-black hover:bg-netural-300 hover:text-black"
-                      disabled={selectedBuildingB === "None"}
-                      treeMap={locationsB}
-                      value={selectedLocationB}
-                      setValue={setSelectedLocationB}
-                      isLoading={isLoading}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3">
-                <Button
-                  variant={"secondary"}
-                  className="mx-4 bg-green-600 hover:bg-green-700"
-                  onClick={() => {
-                    generatePath();
-                  }}
-                >
-                  Show Path
-                </Button>
-                <Button
-                  variant={"secondary"}
-                  className="mx-4"
-                  onClick={() => {
-                    resetSelection();
-                    resetDrawing();
-                    setAllPaths([]);
-                  }}
-                >
-                  Reset
-                </Button>
-                <Button
-                  className="mx-4"
-                  onClick={() => {
-                    map.setCamera({
-                      center: [114.27068710327148, 22.333478832257015],
-                      zoom: 16,
-                    });
-                    setCurrentTreeMap(1);
-                    setTreeMap([]);
-                    let southwest = new atlas.data.Position(
-                      114.25533413886734,
-                      22.32392661393618
-                    );
-                    let northeast = new atlas.data.Position(
-                      114.28604006767,
-                      22.343040319755985
-                    );
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      variant={"secondary"}
+                      className="mx-4 bg-green-600 hover:bg-green-700"
+                      onClick={() => {
+                        generatePath();
+                      }}
+                    >
+                      Show Path
+                    </Button>
+                    <Button
+                      variant={"secondary"}
+                      className="mx-4"
+                      onClick={() => {
+                        resetSelection();
+                        resetDrawing();
+                        setAllPaths([]);
+                      }}
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      className="mx-4"
+                      onClick={() => {
+                        map.setCamera({
+                          center: [114.27068710327148, 22.333478832257015],
+                          zoom: 16,
+                        });
+                        setCurrentTreeMap(1);
+                        setTreeMap([]);
+                        let southwest = new atlas.data.Position(
+                          114.25533413886734,
+                          22.32392661393618
+                        );
+                        let northeast = new atlas.data.Position(
+                          114.28604006767,
+                          22.343040319755985
+                        );
 
-                    let boundingBox = new atlas.data.BoundingBox(
-                      southwest,
-                      northeast
-                    );
-                    map.setCamera({
-                      maxBounds: boundingBox,
-                    });
-                  }}
-                >
-                  Go to HKUST
-                </Button>
-              </div>
+                        let boundingBox = new atlas.data.BoundingBox(
+                          southwest,
+                          northeast
+                        );
+                        map.setCamera({
+                          maxBounds: boundingBox,
+                        });
+                      }}
+                    >
+                      Go to HKUST
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
             <div id="map" className="w-full min-h-screen bg-neutral-800"></div>
           </div>
