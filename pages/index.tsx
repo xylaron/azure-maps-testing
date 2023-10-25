@@ -594,9 +594,9 @@ const Home = () => {
                       </div>
                       {allPaths.length > 0 && (
                         <div className="flex flex-col gap-3 text-sm">
-                          <h1 className="ml-2 mr-4 flex flex-row gap-2 text-base font-semibold mt-2 items-center">
-                            <Info className="text-white" size={24} />
-                            <div>Paths</div>
+                          <h1 className="ml-2 mr-4 flex flex-row text-base font-semibold mt-2 items-center">
+                            <Info className="pr-1 text-white" size={24} />
+                            <div className="pr-2">Paths:</div>
                           </h1>
                           {allPaths.map((path: any, index: number) => {
                             return (
