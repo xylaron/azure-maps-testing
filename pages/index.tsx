@@ -592,56 +592,160 @@ const Home = () => {
                           isLoading={isLoading}
                         />
                       </div>
-                      {allPaths.length > 0 && (
-                        <div className="flex flex-col gap-3 text-sm">
-                          <h1 className="ml-2 mr-4 flex flex-row text-base font-semibold mt-2 items-center">
-                            <Info className="pr-1 text-white" size={24} />
-                            <div className="pr-2">Paths:</div>
-                          </h1>
-                          {allPaths.map((path: any, index: number) => {
-                            return (
-                              <div
-                                key={"path " + index}
-                                className="flex flex-col gap-1 mx-4"
-                              >
-                                <div className="font-semibold">
-                                  {
-                                    fullTreeMap.find(
-                                      (node) => node.id === path.id
-                                    )?.name
-                                  }
-                                  :
-                                </div>
-                                <div className="">
-                                  From{" "}
-                                  <span className="underline">
-                                    {
-                                      fullTreeMap
-                                        .find((node) => node.id === path.id)
-                                        ?.nodes.find(
-                                          (point) => point.id === path.path[0]
-                                        )?.name
-                                    }
-                                  </span>{" "}
-                                  to{" "}
-                                  <span className="underline">
-                                    {
-                                      fullTreeMap
-                                        .find((node) => node.id === path.id)
-                                        ?.nodes.find(
-                                          (point) =>
-                                            point.id ===
-                                            path.path[path.path.length - 1]
-                                        )?.name
-                                    }
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
+                    {allPaths.length > 0 && (
+                      <div className="flex flex-col gap-3 text-sm">
+                        <h1 className="ml-2 mr-4 flex flex-row text-base font-semibold mt-2 items-center">
+                          <Info className="pr-1 text-white" size={24} />
+                          <div className="pr-2">Paths:</div>
+                        </h1>
+                        {allPaths.map((path: any, index: number) => {
+                          return (
+                            <button
+                              key={"path " + index}
+                              className="flex flex-col gap-1 mx-4"
+                              onClick={() => {
+                                if (path.id === currentTreeMap) return;
+                                if (path.id === 1) {
+                                  map.setCamera({
+                                    center: [
+                                      114.27068710327148, 22.333478832257015,
+                                    ],
+                                    zoom: 16,
+                                  });
+                                  setCurrentTreeMap(1);
+                                  setTreeMap([]);
+                                  let southwest = new atlas.data.Position(
+                                    114.25533413886734,
+                                    22.32392661393618
+                                  );
+                                  let northeast = new atlas.data.Position(
+                                    114.28604006767,
+                                    22.343040319755985
+                                  );
+
+                                  let boundingBox = new atlas.data.BoundingBox(
+                                    southwest,
+                                    northeast
+                                  );
+                                  map.setCamera({
+                                    maxBounds: boundingBox,
+                                  });
+                                } else {
+                                  const indoorMapLayer =
+                                    map.layers.getLayerById("indoor-map");
+                                  if (indoorMapLayer)
+                                    map.layers.remove(indoorMapLayer);
+
+                                  const imageWidth = 4992;
+                                  const imageHeight = 3532;
+
+                                  const pixelSize = 0.0000075;
+
+                                  const imageTopLeft = [
+                                    (-imageWidth / 2) * pixelSize,
+                                    (imageHeight / 2) * pixelSize,
+                                  ];
+                                  const imageTopRight = [
+                                    (imageWidth / 2) * pixelSize,
+                                    (imageHeight / 2) * pixelSize,
+                                  ];
+                                  const imageBottomRight = [
+                                    (imageWidth / 2) * pixelSize,
+                                    (-imageHeight / 2) * pixelSize,
+                                  ];
+                                  const imageBottomLeft = [
+                                    (-imageWidth / 2) * pixelSize,
+                                    (-imageHeight / 2) * pixelSize,
+                                  ];
+
+                                  map.layers.add(
+                                    new atlas.layer.ImageLayer(
+                                      {
+                                        url: buildings.find(
+                                          (building) =>
+                                            building.treeMapId === path.id
+                                        )?.imageUrl,
+                                        coordinates: [
+                                          imageTopLeft,
+                                          imageTopRight,
+                                          imageBottomRight,
+                                          imageBottomLeft,
+                                        ],
+                                      },
+                                      "indoor-map"
+                                    )
+                                  );
+
+                                  map.setCamera({
+                                    center: buildings.find(
+                                      (building) =>
+                                        building.treeMapId === path.id
+                                    )?.imageCenter,
+                                    zoom: 15,
+                                  });
+
+                                  const southwest = new atlas.data.Position(
+                                    imageBottomLeft[0],
+                                    imageBottomLeft[1]
+                                  );
+                                  const northeast = new atlas.data.Position(
+                                    imageTopRight[0],
+                                    imageTopRight[1]
+                                  );
+                                  map.setCamera({
+                                    maxBounds: new atlas.data.BoundingBox(
+                                      southwest,
+                                      northeast
+                                    ),
+                                  });
+                                  setCurrentTreeMap(
+                                    buildings.find(
+                                      (building) =>
+                                        building.treeMapId === path.id
+                                    )?.treeMapId
+                                  );
+                                  setTreeMap([]);
+                                }
+                              }}
+                            >
+                              <div className="font-semibold">
+                                {
+                                  fullTreeMap.find(
+                                    (node) => node.id === path.id
+                                  )?.name
+                                }
+                                :
+                              </div>
+                              <div className="text-left">
+                                From{" "}
+                                <span className="underline">
+                                  {
+                                    fullTreeMap
+                                      .find((node) => node.id === path.id)
+                                      ?.nodes.find(
+                                        (point) => point.id === path.path[0]
+                                      )?.name
+                                  }
+                                </span>{" "}
+                                to{" "}
+                                <span className="underline">
+                                  {
+                                    fullTreeMap
+                                      .find((node) => node.id === path.id)
+                                      ?.nodes.find(
+                                        (point) =>
+                                          point.id ===
+                                          path.path[path.path.length - 1]
+                                      )?.name
+                                  }
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col gap-3">
                     <Button
