@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import "azure-maps-control/dist/atlas.min.css";
 import "azure-maps-indoor/dist/atlas-indoor.min.css";
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import { Combobox } from "@/components/ui/combobox";
@@ -314,6 +314,13 @@ const Home = () => {
       setSelectedSymbol(symbol[0].data.properties);
       setIsMenuOpen(true);
     });
+    map.events.add("mouseover", newTreeMapLayer, (e: any) => {
+      map.getCanvasContainer().style.cursor = "pointer";
+    });
+
+    map.events.add("mouseout", newTreeMapLayer, (e: any) => {
+      map.getCanvasContainer().style.cursor = "grab";
+    });
   }, [treeMap]);
 
   //user selection handlers
@@ -585,6 +592,55 @@ const Home = () => {
                           isLoading={isLoading}
                         />
                       </div>
+                      {allPaths.length > 0 && (
+                        <div className="flex flex-col gap-3 text-sm">
+                          <h1 className="ml-2 mr-4 flex flex-row gap-2 text-base font-semibold mt-2 items-center">
+                            <Info className="text-white" size={24} />
+                            <div>Paths</div>
+                          </h1>
+                          {allPaths.map((path: any, index: number) => {
+                            return (
+                              <div
+                                key={"path " + index}
+                                className="flex flex-col gap-1 mx-4"
+                              >
+                                <div className="font-semibold">
+                                  {
+                                    fullTreeMap.find(
+                                      (node) => node.id === path.id
+                                    )?.name
+                                  }
+                                  :
+                                </div>
+                                <div className="">
+                                  From{" "}
+                                  <span className="underline">
+                                    {
+                                      fullTreeMap
+                                        .find((node) => node.id === path.id)
+                                        ?.nodes.find(
+                                          (point) => point.id === path.path[0]
+                                        )?.name
+                                    }
+                                  </span>{" "}
+                                  to{" "}
+                                  <span className="underline">
+                                    {
+                                      fullTreeMap
+                                        .find((node) => node.id === path.id)
+                                        ?.nodes.find(
+                                          (point) =>
+                                            point.id ===
+                                            path.path[path.path.length - 1]
+                                        )?.name
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col gap-3">
