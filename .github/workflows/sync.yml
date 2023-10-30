@@ -1,0 +1,17 @@
+   name: Sync to Azure DevOps
+   on: [push]
+   
+   jobs:
+     build:
+       runs-on: ubuntu-latest
+       
+       steps:
+       - name: Checkout GitHub Repo
+         uses: actions/checkout@v2
+         
+       - name: Push to Azure DevOps
+         run: |
+           git config --global user.email "aldo6701@gmail.com"
+           git config --global user.name "xylaron"
+           git remote add azure https://${{ secrets.AZURE_DEVOPS_USERNAME }}:${{ secrets.AZURE_DEVOPS_PASSWORD }}@your-azure-devops-repo-url
+           git push azure HEAD:main
