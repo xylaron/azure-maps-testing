@@ -14,4 +14,5 @@
            git config --global user.email "aldo6701@gmail.com"
            git config --global user.name "xylaron"
            git remote add azure https://${{ secrets.AZURE_DEVOPS_USERNAME }}:${{ secrets.AZURE_DEVOPS_PASSWORD }}@dev.azure.com/eastechhk/POC%20-%20Map/_git/POC%20-%20Map
+           git pull origin main
            git push azure main
