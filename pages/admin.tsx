@@ -303,7 +303,7 @@ const Admin: NextPage = () => {
         <div className="flex flex-row">
           <div className="flex flex-col w-4/12 px-6 py-12 justify-between">
             <div className="flex flex-col gap-8">
-              <div className="font-bold text-2xl px-2">Azure Maps Admin</div>
+              <div className="font-bold text-2xl px-2">Path Advisor Admin</div>
               <Input
                 type="number"
                 placeholder="PointA"
