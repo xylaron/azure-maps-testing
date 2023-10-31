@@ -108,6 +108,12 @@ const Home = () => {
         console.log("Mouse click position:", e.position);
       });
     });
+
+    //map cleanup
+    return () => {
+      map.dispose();
+      setMap(null);
+    };
   }, []);
 
   //map configuration change
