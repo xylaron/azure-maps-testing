@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -20,6 +21,7 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   setIsMenuOpen,
   selectedSymbol,
 }) => {
+  const router = useRouter();
   const [title, setTitle] = useState(selectedSymbol.title);
   const [icon, setIcon] = useState(selectedSymbol.icon);
 
@@ -78,6 +80,15 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
           }}
         >
           {isChangingLocation ? "Save" : "Change Marker Location"}
+        </Button>
+        <Button
+          className="mt-4"
+          variant={"secondary"}
+          onClick={() => {
+            router.push("/pano");
+          }}
+        >
+          Go to Street View
         </Button>
       </div>
       <div className="flex flex-col gap-3">
