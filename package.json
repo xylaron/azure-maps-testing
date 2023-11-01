@@ -39,5 +39,8 @@
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.54.6"
   }
 }
