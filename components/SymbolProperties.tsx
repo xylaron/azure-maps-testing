@@ -15,11 +15,15 @@ interface SymbolPropertiesProps {
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedSymbol: any;
   setTreeMap: React.Dispatch<React.SetStateAction<any>>;
+  isPanoOpen: boolean;
+  setIsPanoOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   setIsMenuOpen,
   selectedSymbol,
+  isPanoOpen,
+  setIsPanoOpen,
 }) => {
   const router = useRouter();
   const [title, setTitle] = useState(selectedSymbol.title);
@@ -41,7 +45,7 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   }, [selectedSymbol]);
 
   return (
-    <div className="flex flex-col min-h-full justify-between">
+    <div className="flex flex-col min-h-full justify-between space-y-8">
       <div className="flex flex-col gap-3">
         <div className="font-bold text-xl px-2">Edit Marker</div>
         <div>
@@ -85,10 +89,10 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
           className="mt-4"
           variant={"secondary"}
           onClick={() => {
-            router.push("/pano");
+            setIsPanoOpen(!isPanoOpen);
           }}
         >
-          Go to Street View
+          {isPanoOpen ? "Close Street View" : "Open Street View"}
         </Button>
       </div>
       <div className="flex flex-col gap-3">

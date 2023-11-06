@@ -21,11 +21,20 @@ import {
   mockFetchFullTreeMap,
   mockFetchTreeMap,
 } from "@/mock/treemap/treemap";
-import { getSinglePath } from "@/services/getSinglePath";
 import { getFullPath } from "@/services/getFullPath";
 import SymbolProperties from "@/components/SymbolProperties";
 
 const inter = Inter({ subsets: ["latin"] });
+
+const ReactPhotoSphereViewer = dynamic(
+  () =>
+    import("react-photo-sphere-viewer").then(
+      (mod) => mod.ReactPhotoSphereViewer
+    ),
+  {
+    ssr: false,
+  }
+);
 
 const Home = () => {
   const [map, setMap] = useState<any>(null);
@@ -50,6 +59,7 @@ const Home = () => {
   //indoor symbol states
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [selectedSymbol, setSelectedSymbol] = useState<any>({});
+  const [isPanoOpen, setIsPanoOpen] = useState<boolean>(false);
 
   //map onload
   useEffect(() => {
@@ -512,12 +522,14 @@ const Home = () => {
       >
         <div className="min-w-full flex flex-col gap-4">
           <div className="flex flex-row">
-            <div className="flex flex-col justify-between w-4/12 px-6 py-8">
+            <div className="flex flex-col w-4/12 px-6 py-8 h-screen overflow-y-auto justify-between space-y-8">
               {isMenuOpen ? (
                 <SymbolProperties
                   setIsMenuOpen={setIsMenuOpen}
                   selectedSymbol={selectedSymbol}
                   setSelectedSymbol={setSelectedSymbol}
+                  isPanoOpen={isPanoOpen}
+                  setIsPanoOpen={setIsPanoOpen}
                 />
               ) : (
                 <>
@@ -783,6 +795,7 @@ const Home = () => {
                         });
                         setCurrentTreeMap(1);
                         setTreeMap([]);
+                        setIsPanoOpen(false);
                         let southwest = new atlas.data.Position(
                           114.25533413886734,
                           22.32392661393618
@@ -807,7 +820,31 @@ const Home = () => {
                 </>
               )}
             </div>
-            <div id="map" className="w-full min-h-screen bg-neutral-800"></div>
+            <div className="flex flex-col w-full h-screen">
+              <div id="map" className="w-full bg-neutral-800 h-screen"></div>
+              {isPanoOpen && (
+                <ReactPhotoSphereViewer
+                  src={
+                    "https://pathadvisor.ust.hk/api/pano/images/5daac91c9ce12a5d92f51405"
+                  }
+                  container={""}
+                  littlePlanet={false}
+                  height={"100vh"}
+                  width={"100%"}
+                  defaultZoomLvl={70}
+                  panoData={(image: any) => ({
+                    fullWidth: image.width,
+                    fullHeight: image.width / 2,
+                    croppedWidth: image.width,
+                    croppedHeight: image.height,
+                    croppedX: 0,
+                    croppedY: 1045,
+                  })}
+                  moveInertia={false}
+                  navbar={["fullscreen"]}
+                ></ReactPhotoSphereViewer>
+              )}
+            </div>
           </div>
         </div>
       </main>
