@@ -832,7 +832,7 @@ const Home = () => {
                   height={"100vh"}
                   width={"100%"}
                   defaultZoomLvl={70}
-                  panoData={(image: any) => ({
+                  panoData={(image: HTMLImageElement) => ({
                     fullWidth: image.width,
                     fullHeight: image.width / 2,
                     croppedWidth: image.width,

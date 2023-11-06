@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -25,7 +24,6 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   isPanoOpen,
   setIsPanoOpen,
 }) => {
-  const router = useRouter();
   const [title, setTitle] = useState(selectedSymbol.title);
   const [icon, setIcon] = useState(selectedSymbol.icon);
 
