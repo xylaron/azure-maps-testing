@@ -40,6 +40,7 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
     setTitle(selectedSymbol.title);
     setIcon(selectedSymbol.icon);
     setIsChangingLocation(false);
+    setIsPanoOpen(false);
   }, [selectedSymbol]);
 
   return (
@@ -85,7 +86,7 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
         </Button>
         <Button
           className="mt-4"
-          variant={"secondary"}
+          variant={isPanoOpen ? "default" : "secondary"}
           onClick={() => {
             setIsPanoOpen(!isPanoOpen);
           }}
@@ -101,7 +102,13 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
         >
           Save
         </Button>
-        <Button className="mx-4" onClick={() => setIsMenuOpen(false)}>
+        <Button
+          className="mx-4"
+          onClick={() => {
+            setIsMenuOpen(false);
+            setIsPanoOpen(false);
+          }}
+        >
           Back
         </Button>
       </div>
