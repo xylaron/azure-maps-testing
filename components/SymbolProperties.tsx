@@ -44,9 +44,9 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   }, [selectedSymbol]);
 
   return (
-    <div className="flex flex-col min-h-full justify-between space-y-8">
-      <div className="flex flex-col gap-3">
-        <div className="font-bold text-xl px-2">Edit Marker</div>
+    <div className="flex flex-col space-y-8">
+      <div className="flex flex-col gap-3 p-4">
+        <div className="font-bold text-xl">Edit Marker</div>
         <div>
           <label className="text-sm font-medium">Title</label>
           <Input
