@@ -61,6 +61,7 @@ const Home = () => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [selectedSymbol, setSelectedSymbol] = useState<any>({});
   const [isPanoOpen, setIsPanoOpen] = useState<boolean>(false);
+  const [currentPanoUrl, setCurrentPanoUrl] = useState<string>("");
 
   //map onload
   useEffect(() => {
@@ -304,6 +305,7 @@ const Home = () => {
           {
             icon: "none",
             title: treeMap[i].name,
+            pano: treeMap[i].pano,
             size: 1,
           }
         );
@@ -315,6 +317,7 @@ const Home = () => {
           {
             icon: "pin-round-blue",
             title: treeMap[i].name,
+            pano: treeMap[i].pano,
             size: 0.75,
             iconOffset: [0, 10],
             textOffset: [0, 0.5],
@@ -505,6 +508,17 @@ const Home = () => {
     dataSource.add([startPoint, endPoint]);
   }, [allPaths, treeMap]);
 
+  //pano
+  useEffect(() => {
+    if (!isPanoOpen) return;
+    if (currentPanoUrl === "") return;
+    console.log("CHANGED LOCATION");
+    setIsPanoOpen(false);
+    setTimeout(() => {
+      setIsPanoOpen(true);
+    }, 1);
+  }, [currentPanoUrl]);
+
   return (
     <>
       <Head>
@@ -523,7 +537,7 @@ const Home = () => {
       >
         <div className="min-w-full flex flex-col gap-4">
           <div className="flex flex-row">
-            <div className="flex flex-col w-4/12 px-6 py-8 h-screen overflow-y-auto">
+            <div className="flex flex-col w-4/12 px-6 py-8 h-screen overflow-y-auto gap-4">
               {isMenuOpen ? (
                 <SymbolProperties
                   setIsMenuOpen={setIsMenuOpen}
@@ -531,9 +545,14 @@ const Home = () => {
                   setSelectedSymbol={setSelectedSymbol}
                   isPanoOpen={isPanoOpen}
                   setIsPanoOpen={setIsPanoOpen}
+                  currentPanoUrl={currentPanoUrl}
+                  setCurrentPanoUrl={setCurrentPanoUrl}
                 />
               ) : (
                 <>
+                  <div className="font-bold text-2xl px-2">
+                    HKUST Path Advisor Demo
+                  </div>
                   <Tabs defaultValue="pathfinder" className="px-2">
                     <TabsList className="w-full grid grid-cols-2">
                       <TabsTrigger value="pathfinder" className="">
@@ -545,7 +564,7 @@ const Home = () => {
                       <div className="flex flex-col mt-8 gap-8">
                         <div className="flex flex-col gap-6">
                           <div className="font-bold text-xl px-2">
-                            HKUST Path Advisor Demo
+                            Pathfinder
                           </div>
                           <div className="font-bold text-base px-2">
                             Current View:{" "}
@@ -859,9 +878,7 @@ const Home = () => {
               <div id="map" className="w-full bg-neutral-800 h-screen"></div>
               {isPanoOpen && (
                 <ReactPhotoSphereViewer
-                  src={
-                    "https://pathadvisor.ust.hk/api/pano/images/5daac91c9ce12a5d92f51405"
-                  }
+                  src={currentPanoUrl}
                   container={""}
                   littlePlanet={false}
                   height={"100vh"}

@@ -16,6 +16,8 @@ interface SymbolPropertiesProps {
   setTreeMap: React.Dispatch<React.SetStateAction<any>>;
   isPanoOpen: boolean;
   setIsPanoOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  currentPanoUrl: string;
+  setCurrentPanoUrl: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
@@ -23,9 +25,12 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   selectedSymbol,
   isPanoOpen,
   setIsPanoOpen,
+  currentPanoUrl,
+  setCurrentPanoUrl,
 }) => {
   const [title, setTitle] = useState(selectedSymbol.title);
   const [icon, setIcon] = useState(selectedSymbol.icon);
+  const [pano, setPano] = useState(selectedSymbol.pano);
 
   const [isChangingLocation, setIsChangingLocation] = useState(false);
 
@@ -39,14 +44,16 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   useEffect(() => {
     setTitle(selectedSymbol.title);
     setIcon(selectedSymbol.icon);
+    setPano(selectedSymbol.pano);
+    setCurrentPanoUrl(selectedSymbol.pano);
     setIsChangingLocation(false);
-    setIsPanoOpen(false);
   }, [selectedSymbol]);
 
   return (
     <div className="flex flex-col space-y-8">
       <div className="flex flex-col gap-3 p-4">
         <div className="font-bold text-xl">Edit Marker</div>
+        <div>{pano}</div>
         <div>
           <label className="text-sm font-medium">Title</label>
           <Input

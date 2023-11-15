@@ -13,6 +13,7 @@ export interface Node {
   name?: string;
   coordinates: [number, number];
   type: "building" | "room" | "exit" | "road" | "stairs" | "elevator";
+  pano?: string;
   connections: Connection[];
 }
 

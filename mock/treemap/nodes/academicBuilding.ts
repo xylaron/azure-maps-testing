@@ -6,6 +6,7 @@ export const academicBuildingNodes: Node[] = [
     name: "Exit A",
     coordinates: [-0.0018486518701763544, -0.00013117136404616758],
     type: "exit",
+    pano: "https://pathadvisor.ust.hk/api/pano/images/5daac2b49ce12a5d92f513f7",
     connections: [
       {
         id: 2,
@@ -82,6 +83,7 @@ export const academicBuildingNodes: Node[] = [
     coordinates: [0.0035226833645651823, 0.0005065931313339433],
     name: "G106",
     type: "room",
+    pano: "https://pathadvisor.ust.hk/api/pano/images/5daac8339ce12a5d92f513fe",
     connections: [
       {
         id: 5,
@@ -109,6 +111,7 @@ export const academicBuildingNodes: Node[] = [
     coordinates: [-0.0056528909444466535, -0.0007374941810951441],
     name: "Starbucks Coffee",
     type: "room",
+    pano: "https://pathadvisor.ust.hk/api/pano/images/5daac91c9ce12a5d92f51405",
     connections: [
       {
         id: 7,
@@ -125,6 +128,7 @@ export const academicBuildingNodes: Node[] = [
     coordinates: [-0.007205294324364786, 0.000451044159774483],
     name: "Tsang Shiu Tim Art Hall",
     type: "room",
+    pano: "https://pathadvisor.ust.hk/api/pano/images/5daac8f69ce12a5d92f51403",
     connections: [
       {
         id: 8,
