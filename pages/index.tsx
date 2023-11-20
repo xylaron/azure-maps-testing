@@ -9,7 +9,7 @@ import Head from "next/head";
 import dynamic from "next/dynamic";
 import "azure-maps-control/dist/atlas.min.css";
 import "azure-maps-indoor/dist/atlas-indoor.min.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, createRef } from "react";
 import { MapPin, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
@@ -24,18 +24,14 @@ import {
 } from "@/mock/treemap/treemap";
 import { getFullPath } from "@/services/getFullPath";
 import SymbolProperties from "@/components/SymbolProperties";
+import {
+  MarkersPlugin,
+  CompassPlugin,
+  ReactPhotoSphereViewer,
+} from "react-photo-sphere-viewer/dist/index";
+import { getPanoMarkers } from "@/services/getPanoMarkers";
 
 const inter = Inter({ subsets: ["latin"] });
-
-const ReactPhotoSphereViewer = dynamic(
-  () =>
-    import("react-photo-sphere-viewer").then(
-      (mod) => mod.ReactPhotoSphereViewer
-    ),
-  {
-    ssr: false,
-  }
-);
 
 const Home = () => {
   const [map, setMap] = useState<any>(null);
@@ -62,6 +58,7 @@ const Home = () => {
   const [selectedSymbol, setSelectedSymbol] = useState<any>({});
   const [isPanoOpen, setIsPanoOpen] = useState<boolean>(false);
   const [currentPanoUrl, setCurrentPanoUrl] = useState<string>("");
+  const panoRef = createRef<any>();
 
   //map onload
   useEffect(() => {
@@ -303,9 +300,11 @@ const Home = () => {
         const point = new atlas.data.Feature(
           new atlas.data.Point(treeMap[i].coordinates),
           {
+            id: treeMap[i].id,
             icon: "none",
             title: treeMap[i].name,
             pano: treeMap[i].pano,
+            coordinates: treeMap[i].coordinates,
             size: 1,
           }
         );
@@ -315,9 +314,11 @@ const Home = () => {
         const point = new atlas.data.Feature(
           new atlas.data.Point(treeMap[i].coordinates),
           {
+            id: treeMap[i].id,
             icon: "pin-round-blue",
             title: treeMap[i].name,
             pano: treeMap[i].pano,
+            coordinates: treeMap[i].coordinates,
             size: 0.75,
             iconOffset: [0, 10],
             textOffset: [0, 0.5],
@@ -342,6 +343,41 @@ const Home = () => {
       map.getCanvasContainer().style.cursor = "grab";
     });
   }, [treeMap]);
+
+  //indoor map selection handlers
+  useEffect(() => {
+    if (!map) return;
+    if (currentTreeMap === 1) return;
+    const currentLocationDataSource = new atlas.source.DataSource();
+    map.sources.add(currentLocationDataSource);
+    const currentLocationLayer = new atlas.layer.SymbolLayer(
+      currentLocationDataSource,
+      "current-location",
+      {
+        iconOptions: {
+          image: ["get", "icon"],
+          allowOverlap: true,
+          ignorePlacement: true,
+          size: 1,
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+        minZoom: 15,
+      }
+    );
+    const point = new atlas.data.Feature(
+      new atlas.data.Point(selectedSymbol.coordinates),
+      {
+        icon: "marker-blue",
+      }
+    );
+    currentLocationDataSource.add(point);
+    map.layers.add(currentLocationLayer);
+  }, [selectedSymbol]);
+
+  const resetCurrentLocationSymbol = () => {
+    const currentLocationLayer = map.layers.getLayerById("current-location");
+    if (currentLocationLayer) map.layers.remove(currentLocationLayer);
+  };
 
   //user selection handlers
   useEffect(() => {
@@ -508,16 +544,56 @@ const Home = () => {
     dataSource.add([startPoint, endPoint]);
   }, [allPaths, treeMap]);
 
-  //pano
   useEffect(() => {
     if (!isPanoOpen) return;
     if (currentPanoUrl === "") return;
     console.log("CHANGED LOCATION");
-    setIsPanoOpen(false);
-    setTimeout(() => {
-      setIsPanoOpen(true);
-    }, 1);
+    panoRef.current.setPanorama(currentPanoUrl, {
+      transition: "fade-only",
+      speed: "20rpm",
+      position: { yaw: 0, pitch: 0 },
+    });
+    getPanoMarkers(
+      panoRef.current,
+      MarkersPlugin,
+      selectedSymbol,
+      setSelectedSymbol,
+      setCurrentPanoUrl,
+      treeMap
+    );
   }, [currentPanoUrl]);
+
+  const handlePanoRotationChange = (lat: number, lng: number) => {
+    // console.log("Pano Rotation Changed");
+    // console.log("Current x degrees: ", (lat / Math.PI) * 180);
+    // console.log("Current y degrees: ", (lng / Math.PI) * 180);
+  };
+
+  const handlePanoReady = (instance: Viewer) => {
+    getPanoMarkers(
+      panoRef.current,
+      MarkersPlugin,
+      selectedSymbol,
+      setSelectedSymbol,
+      setCurrentPanoUrl,
+      treeMap
+    );
+  };
+
+  const panoPlugins = [
+    [
+      MarkersPlugin,
+      {
+        markers: [],
+      },
+    ],
+    [
+      CompassPlugin,
+      {
+        hotspots: [],
+      },
+    ],
+  ];
 
   return (
     <>
@@ -547,6 +623,7 @@ const Home = () => {
                   setIsPanoOpen={setIsPanoOpen}
                   currentPanoUrl={currentPanoUrl}
                   setCurrentPanoUrl={setCurrentPanoUrl}
+                  resetCurrentLocationSymbol={resetCurrentLocationSymbol}
                 />
               ) : (
                 <>
@@ -894,6 +971,22 @@ const Home = () => {
                   })}
                   moveInertia={false}
                   navbar={["fullscreen"]}
+                  onPositionChange={handlePanoRotationChange}
+                  onReady={handlePanoReady}
+                  onClick={(
+                    data: events.ClickEvent & { type: "click" },
+                    instance: Viewer
+                  ) => {
+                    console.log("Pano Clicked");
+                    console.log("Pano Yaw: ", (data.data.yaw / Math.PI) * 180);
+                    console.log(
+                      "Pano Pitch: ",
+                      (data.data.pitch / Math.PI) * 180
+                    );
+                    console.log("Pano Ref", panoRef.current);
+                  }}
+                  plugins={panoPlugins}
+                  ref={panoRef}
                 ></ReactPhotoSphereViewer>
               )}
             </div>

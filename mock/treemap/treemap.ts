@@ -14,6 +14,7 @@ export interface Node {
   coordinates: [number, number];
   type: "building" | "room" | "exit" | "road" | "stairs" | "elevator";
   pano?: string;
+  position?: [number, number];
   connections: Connection[];
 }
 

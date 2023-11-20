@@ -18,6 +18,7 @@ interface SymbolPropertiesProps {
   setIsPanoOpen: React.Dispatch<React.SetStateAction<boolean>>;
   currentPanoUrl: string;
   setCurrentPanoUrl: React.Dispatch<React.SetStateAction<string>>;
+  resetCurrentLocationSymbol: () => void;
 }
 
 const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
@@ -27,6 +28,7 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
   setIsPanoOpen,
   currentPanoUrl,
   setCurrentPanoUrl,
+  resetCurrentLocationSymbol,
 }) => {
   const [title, setTitle] = useState(selectedSymbol.title);
   const [icon, setIcon] = useState(selectedSymbol.icon);
@@ -114,6 +116,7 @@ const SymbolProperties: React.FC<SymbolPropertiesProps> = ({
           onClick={() => {
             setIsMenuOpen(false);
             setIsPanoOpen(false);
+            resetCurrentLocationSymbol();
           }}
         >
           Back
