@@ -563,6 +563,11 @@ const Home = () => {
     );
   }, [currentPanoUrl]);
 
+  useEffect(() => {
+    if (!map) return;
+    map.resize();
+  }, [isPanoOpen]);
+
   const handlePanoRotationChange = (lat: number, lng: number) => {
     // console.log("Pano Rotation Changed");
     // console.log("Current x degrees: ", (lat / Math.PI) * 180);
